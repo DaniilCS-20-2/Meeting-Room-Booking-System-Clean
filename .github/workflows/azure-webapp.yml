@@ -10,7 +10,7 @@ on:
 
 env:
   # Замените на имя вашего Web App в Azure (без .azurewebsites.net)
-  AZURE_WEBAPP_NAME: ferma-booking
+  AZURE_WEBAPP_NAME: bookingbooking
   NODE_VERSION: "20"
 
 jobs:
