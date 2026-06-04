@@ -13,6 +13,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { AdminRoomPage } from "./pages/AdminRoomPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { OverviewCalendarPage } from "./pages/OverviewCalendarPage";
+import { TvDisplayPage } from "./pages/TvDisplayPage";
 // Импортируем объект переводов (Nynorsk).
 import { t } from "./i18n/labels";
 
@@ -64,21 +65,27 @@ const AppLayout = () => {
   const location = useLocation();
   // Получаем данные пользователя и флаг загрузки.
   const { user, loading } = useAuth();
-  // Определяем, находимся ли на главной странице.
-  const isHome = location.pathname === "/";
   // Определяем, находимся ли на странице авторизации.
   const isAuth = location.pathname === "/auth";
+  const isCalendar = location.pathname === "/calendar";
+  const isDisplay = location.pathname === "/display";
 
   // Показываем индикатор загрузки, пока проверяем токен.
   if (loading) return <div className="page">Lastar...</div>;
 
   return (
     <>
-      {/* Навигация скрыта на главной и auth-страницах — у них своя шапка. */}
-      {!isHome && !isAuth && (
+      {/* Навигация скрыта на auth и fullscreen-календаре. */}
+      {!isAuth && !isCalendar && !isDisplay && (
         <nav className="top-nav">
           <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
           <div className="top-nav__right">
+            {!user && (
+              <>
+                <Link className="home-btn home-btn--ghost" to="/auth?mode=login">{t.home_login_btn}</Link>
+                <Link className="home-btn home-btn--primary" to="/auth?mode=register">{t.home_register_btn}</Link>
+              </>
+            )}
             {user && user.role === "admin" && (
               <>
                 <Link className="home-btn home-btn--primary home-btn--icon-only" to="/admin/rooms/new" title={t.room_add} aria-label={t.room_add}>
@@ -109,6 +116,7 @@ const AppLayout = () => {
         {/* Страница комнаты — публично (анонимы видят read-only календарь). */}
         <Route path="/rooms/:roomId" element={<RoomPage />} />
         <Route path="/calendar" element={<OverviewCalendarPage />} />
+        <Route path="/display" element={<TvDisplayPage />} />
         {/* Страница профиля — только для авторизованных пользователей. */}
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         {/* Создание новой комнаты — только для админов. */}

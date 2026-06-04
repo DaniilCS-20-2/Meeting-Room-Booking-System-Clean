@@ -181,7 +181,7 @@ body {
 }
 .home-card--free { border-color: #22c55e; background: #f0fdf4; }
 .home-card--busy { border-color: #ef4444; background: #fef2f2; }
-.home-card--disabled { border-color: #f59e0b; background: #fffbeb; opacity: 0.7; }
+.home-card--disabled { border-color: #9ca3af; background: #f3f4f6; opacity: 0.7; }
 .home-card__link {
   display: block; padding: 14px; text-decoration: none; color: inherit;
   flex: 1;
@@ -265,7 +265,14 @@ body {
   font-size: 22px; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   color: #1f2937; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: background 0.2s;
+  opacity: 0;
+  pointer-events: none;
+  transition: background 0.2s, opacity 0.2s;
+}
+.room-carousel:hover .room-carousel__arrow,
+.room-carousel__arrow:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 .room-carousel__arrow:hover { background: #fff; }
 .room-carousel__arrow--left { left: 8px; }
@@ -301,6 +308,18 @@ body {
 .room-info p { margin: 6px 0; line-height: 1.5; }
 .room-info strong { color: #111827; }
 .room-admin-actions { margin-top: 8px; }
+.room-disabled-notice {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+}
+.room-disabled-notice p {
+  margin: 4px 0 0;
+  color: #78350f;
+}
 
 /* --- Календарь --- */
 .calendar-nav {
@@ -308,15 +327,20 @@ body {
   font-size: 14px; font-weight: 600;
 }
 .calendar-grid {
-  border: 1px solid #e5e7eb; border-radius: 8px;
-  overflow-x: auto; background: #fff; margin-bottom: 24px;
+  --calendar-paper: #fffefb;
+  --calendar-paper-soft: #fffdf8;
+  --calendar-paper-muted: #faf8f2;
+  --calendar-paper-line: #f0ebe1;
+  border: 1px solid var(--calendar-paper-line); border-radius: 8px;
+  overflow-x: auto; background: var(--calendar-paper); margin-bottom: 24px;
 }
 .calendar-grid__header {
   display: grid;
   grid-template-columns: 60px repeat(7, minmax(0, 1fr));
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--calendar-paper-line);
+  background: var(--calendar-paper-soft);
 }
-.calendar-grid__corner { padding: 8px; }
+.calendar-grid__corner { padding: 8px; background: var(--calendar-paper-soft); }
 .calendar-grid__day-label {
   padding: 8px 4px; text-align: center;
   font-size: 12px; font-weight: 600; color: #374151;
@@ -324,36 +348,60 @@ body {
 .calendar-grid__row {
   display: grid;
   grid-template-columns: 60px repeat(7, minmax(0, 1fr));
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(240, 235, 225, 0.7);
 }
 .calendar-grid__hour {
-  padding: 4px 8px; font-size: 11px; color: #6b7280;
+  padding: 4px 8px; font-size: 12px; font-weight: 600; color: #374151;
   display: flex; align-items: center;
+  background: var(--calendar-paper-soft);
 }
 .calendar-grid__cell {
   min-height: 24px;
-  border-left: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border-left: 1px solid var(--calendar-paper-line);
+  border-bottom: 1px solid rgba(240, 235, 225, 0.7);
+  background: var(--calendar-paper);
   position: relative; display: flex; align-items: center; justify-content: center;
   overflow: hidden; min-width: 0;
 }
-.calendar-grid__cell--booked { background: #fecaca; }
-.calendar-grid__cell--past { background: #e5e7eb; }
+.calendar-grid__cell--booked {
+  background: #fecaca;
+}
+.calendar-grid__cell--booked:not(.overview-cal__cell) {
+  margin: 1px;
+  border: none;
+  border-radius: 3px;
+}
+.calendar-grid__cell--booked:not(.overview-cal__cell).calendar-grid__cell--merge-top {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.calendar-grid__cell--booked:not(.overview-cal__cell).calendar-grid__cell--merge-bottom {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.calendar-grid__cell--past { background: var(--calendar-paper-muted); }
 
-/* Прошедшие свободные ячейки (нельзя бронировать) — светло-серый фон */
+/* Прошедшие свободные ячейки (нельзя бронировать) — приглушённая бумага. */
 .calendar-grid__cell--expired {
-  background: #f3f4f6;
+  background: #fbfaf6;
   cursor: default;
 }
 .calendar-grid__cell--expired:hover {
   outline: none;
 }
-/* Тонкий светлый внутренний контур разделяет подряд идущие цветные ячейки,
-   чтобы одно длинное бронирование не выглядело одним сплошным блоком. */
-.calendar-grid__cell--booked {
+/* Белые полоски между часами; при слиянии убираем только внешние скругления и зазоры. */
+.calendar-grid__cell--booked:not(.overview-cal__cell) {
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.4);
+}
+.calendar-grid__cell--booked:not(.overview-cal__cell):not(.calendar-grid__cell--merge-bottom) {
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.55),
     inset -1px 0 0 rgba(255, 255, 255, 0.4);
+}
+.calendar-grid__cell--booked.calendar-grid__cell--merge-top.calendar-grid__cell--merge-bottom:not(.overview-cal__cell) {
+  box-shadow: none;
 }
 .calendar-grid__label--past { color: #6b7280; }
 .calendar-grid__label {
@@ -413,6 +461,10 @@ body {
 .history-item__company {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 13px; color: #4b5563;
+}
+.history-item__guest {
+  font-size: 13px;
+  color: #4b5563;
 }
 .history-item__company-dot {
   width: 10px; height: 10px; border-radius: 3px;
@@ -629,6 +681,220 @@ body {
 }
 .company-item__color { flex-shrink: 0; }
 .company-item__remove { flex-shrink: 0; }
+.company-item__logo {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.company-item__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.company-item__logo-placeholder {
+  font-size: 9px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.1;
+  padding: 2px;
+}
+.tv-display-url-hint code {
+  font-size: 13px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* --- Korridor-TV / Infoskjerm (transparent bakgrunn) --- */
+html.tv-display-root,
+body.tv-display-root,
+#root.tv-display-root {
+  background: transparent !important;
+  min-height: 100dvh;
+}
+#root.tv-display-root {
+  display: flex;
+  flex-direction: column;
+}
+/* Førehandsvisning: grå ruter viser gjennomsiktige område i nettlesaren. */
+html.tv-display-root--preview,
+body.tv-display-root--preview,
+#root.tv-display-root--preview {
+  background-color: #d4d4d4 !important;
+  background-image:
+    linear-gradient(45deg, #a3a3a3 25%, transparent 25%),
+    linear-gradient(-45deg, #a3a3a3 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #a3a3a3 75%),
+    linear-gradient(-45deg, transparent 75%, #a3a3a3 75%) !important;
+  background-size: 24px 24px !important;
+  background-position: 0 0, 0 12px, 12px -12px, -12px 0 !important;
+}
+.tv-display {
+  flex: 1;
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 43px 50px;
+  background: transparent;
+  color: #111827;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.tv-display__content {
+  width: min(1150px, 100%);
+}
+.tv-display__preview-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  max-width: min(720px, calc(100vw - 32px));
+  z-index: 10;
+  text-align: center;
+}
+.tv-display__head {
+  margin-bottom: 43px;
+  text-align: center;
+}
+.tv-display__heading {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35em 0.55em;
+  font-size: clamp(32px, 4.05vw, 52px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #111827;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__title,
+.tv-display__date {
+  font: inherit;
+  color: inherit;
+}
+.tv-display__sep,
+.tv-display__dot {
+  color: #6b7280;
+  font-weight: 400;
+}
+.tv-display__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-display__row {
+  display: grid;
+  grid-template-columns: minmax(160px, 260px) minmax(0, 1fr);
+  gap: 32px 48px;
+  align-items: center;
+  padding: 14px 0;
+}
+.tv-display__logo {
+  width: min(260px, 21.6vw);
+  height: min(180px, 14.4vw);
+  max-height: 200px;
+  object-fit: contain;
+  object-position: center center;
+  justify-self: center;
+}
+.tv-display__logo-spacer {
+  width: min(260px, 21.6vw);
+  height: 1px;
+  justify-self: center;
+}
+.tv-display__info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.tv-display__time {
+  font-size: clamp(29px, 3.24vw, 45px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__line {
+  margin: 0;
+  font-size: clamp(29px, 3.24vw, 45px);
+  font-weight: 500;
+  line-height: 1.45;
+  color: #1f2937;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__room {
+  font-weight: 600;
+  color: #111827;
+}
+.tv-display__company {
+  font-weight: 600;
+}
+.tv-display__guest {
+  font-weight: 500;
+  color: #374151;
+}
+.tv-display__empty {
+  font-size: clamp(25px, 2.88vw, 38px);
+  font-weight: 500;
+  color: #4b5563;
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 900px) {
+  .tv-display { padding: 29px 22px; }
+  .tv-display__row {
+    grid-template-columns: minmax(100px, 150px) minmax(0, 1fr);
+    gap: 16px 24px;
+    padding: 12px 0;
+  }
+  .tv-display__logo,
+  .tv-display__logo-spacer {
+    width: min(150px, 32vw);
+    height: min(108px, 22vw);
+  }
+  .tv-display__time {
+    font-size: clamp(22px, 4.5vw, 32px);
+  }
+  .tv-display__line {
+    font-size: clamp(20px, 4vw, 29px);
+  }
+  .tv-display__heading {
+    font-size: clamp(25px, 5.4vw, 36px);
+  }
+}
 
 @media (max-width: 560px) {
   /* Мобила: имя на всю ширину, цвет и «Fjern» во второй строке без растягивания. */
@@ -843,6 +1109,44 @@ body {
   font-family: inherit;
   line-height: 1.4;
 }
+.booking-collapsible {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.booking-collapsible__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+  cursor: pointer;
+}
+.booking-collapsible__toggle:hover {
+  background: #f9fafb;
+}
+.booking-guest-fields {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.booking-guest-fields legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
 
 /* Информационный блок (например, при частичном создании recurring серии). */
 .info-block {
@@ -882,7 +1186,7 @@ body {
 /* Прошедшие свободные ячейки — светло-серый фон (отдельно для overview календаря,
    т.к. там .overview-cal__cell перебивает фон через !important) */
 .overview-cal__cell.calendar-grid__cell--expired {
-  background: #e5e7eb !important;
+  background: #faf8f2 !important;
 }
 
 /* Ряд выбора цвета в форме редактирования комнаты. */
@@ -918,7 +1222,7 @@ body {
   background: transparent !important;
   padding: 0;
 }
-.overview-cal__cell.calendar-grid__cell--past { background: #f3f4f6 !important; }
+.overview-cal__cell.calendar-grid__cell--past { background: #faf8f2 !important; }
 .overview-cal__chunks {
   position: absolute; inset: 1px;
   display: flex; gap: 1px;
@@ -936,6 +1240,21 @@ body {
   padding: 0 2px;
   transition: filter 0.12s;
 }
+.overview-cal__chunk--merge-top {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: -1px;
+  min-height: calc(100% + 1px);
+}
+.overview-cal__chunk--merge-bottom {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: -1px;
+  min-height: calc(100% + 1px);
+}
+.overview-cal__chunk--merge-top.overview-cal__chunk--merge-bottom {
+  border-radius: 0;
+}
 .overview-cal__chunk:hover { filter: brightness(1.08); outline: 2px solid #4f46e5; outline-offset: -2px; }
 .overview-cal__chunk--past {
   background: #d1d5db; color: #6b7280;
@@ -952,8 +1271,8 @@ body {
 .overview-calendar-page.page {
   max-width: none;
   width: 100%;
-  padding: 16px;
-  min-height: calc(100dvh - 64px);
+  padding: 4px 10px 10px;
+  min-height: 100dvh;
   display: flex;
 }
 .overview-cal--fullscreen {
@@ -962,6 +1281,37 @@ body {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+}
+.overview-cal--fullscreen .overview-cal__head {
+  position: absolute;
+  top: 4px;
+  right: 10px;
+  z-index: 5;
+  justify-content: flex-end;
+  min-height: 0;
+  margin-bottom: 0;
+}
+.overview-cal--fullscreen .calendar-nav {
+  margin-bottom: 0;
+}
+.overview-cal--fullscreen .calendar-legend {
+  margin: 0 0 2px;
+  padding: 0;
+  gap: 18px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  min-height: 30px;
+  align-items: center;
+  padding-right: 220px;
+}
+.overview-cal--fullscreen .calendar-legend__item {
+  gap: 8px;
+}
+.overview-cal--fullscreen .calendar-legend__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
 }
 .overview-cal--fullscreen .calendar-grid {
   flex: 1 1 auto;

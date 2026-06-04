@@ -70,4 +70,16 @@ const remove = async (req, res, next) => {
   }
 };
 
-module.exports = { getPublicList, getAll, create, update, remove };
+const uploadLogo = async (req, res, next) => {
+  try {
+    if (!req.file) throw new HttpError(400, "Ingen fil lasta opp.");
+    const logoUrl = `/uploads/${req.file.filename}`;
+    const item = await CompanyRepository.setLogo(req.params.id, logoUrl);
+    if (!item) throw new HttpError(404, "Selskap ikkje funne.");
+    res.json({ success: true, data: item });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getPublicList, getAll, create, update, remove, uploadLogo };

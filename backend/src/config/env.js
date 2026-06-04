@@ -23,7 +23,9 @@ if (isProd) {
 
 // Список разрешённых origin'ов для CORS. Формат: "https://a.com,https://b.com".
 // По умолчанию разрешаем только frontendUrl (или локальный dev).
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+const azureHost = process.env.WEBSITE_HOSTNAME;
+const defaultFrontendUrl = azureHost ? `https://${azureHost}` : "http://localhost:5173";
+const frontendUrl = process.env.FRONTEND_URL || defaultFrontendUrl;
 const extraOrigins = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .map((s) => s.trim())

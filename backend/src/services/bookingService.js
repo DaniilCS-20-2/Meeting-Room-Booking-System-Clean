@@ -98,13 +98,26 @@ class BookingService {
     }));
   }
 
-  static async createBooking({ userId, roomId, startDateTime, endDateTime, recurring, comment }) {
+  static async createBooking({
+    userId,
+    roomId,
+    startDateTime,
+    endDateTime,
+    recurring,
+    comment,
+    guestFirstName,
+    guestLastName,
+    guestDescription,
+  }) {
     if (!userId || !roomId) {
       throw new HttpError(400, "userId and roomId are required.");
     }
 
     const room = await RoomRepository.findById(roomId);
     if (!room) throw new HttpError(404, "Room not found.");
+    if (room.is_disabled) {
+      throw new HttpError(409, room.disabled_reason || "Room is currently unavailable.");
+    }
 
     const { startTime, endTime, durationMinutes } = BookingService.validateBaseSlot(startDateTime, endDateTime);
     BookingService.validateDurationLimits(durationMinutes, room);
@@ -145,6 +158,9 @@ class BookingService {
           endTime: occurrence.endTime,
           recurrenceGroupId: occurrence.recurrenceGroupId,
           comment,
+          guestFirstName,
+          guestLastName,
+          guestDescription,
           status: "confirmed",
         });
 
@@ -211,6 +227,9 @@ class BookingService {
     }
 
     const room = await RoomRepository.findById(booking.room_id);
+    if (room?.is_disabled) {
+      throw new HttpError(409, room.disabled_reason || "Room is currently unavailable.");
+    }
     if (room) {
       const newDuration = getDurationMinutes(start, newEnd);
       if (room.min_booking_minutes != null && newDuration < room.min_booking_minutes) {

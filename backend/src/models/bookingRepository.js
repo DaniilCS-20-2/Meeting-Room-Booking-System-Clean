@@ -7,10 +7,14 @@ class BookingRepository {
   static async insertBooking(client, payload) {
     // Формируем параметризованный INSERT-запрос для защиты от SQL-инъекций.
     const query = `
-      INSERT INTO bookings (room_id, user_id, start_time, end_time, status, recurrence_group_id, comment)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO bookings (
+        room_id, user_id, start_time, end_time, status, recurrence_group_id, comment,
+        guest_first_name, guest_last_name, guest_description
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id, room_id, user_id, start_time, end_time, status,
-                recurrence_group_id, comment, created_at`;
+                recurrence_group_id, comment, guest_first_name, guest_last_name,
+                guest_description, created_at`;
     // Подготавливаем массив параметров в правильном порядке.
     const values = [
       payload.roomId,
@@ -23,6 +27,9 @@ class BookingRepository {
       payload.recurrenceGroupId || null,
       // Комментарий пользователя при создании (необязательный).
       payload.comment || null,
+      payload.guestFirstName || null,
+      payload.guestLastName || null,
+      payload.guestDescription || null,
     ];
     // Выполняем запрос через текущий транзакционный клиент.
     const { rows } = await client.query(query, values);
@@ -93,12 +100,15 @@ class BookingRepository {
              COALESCE(u.display_name, b.user_name_snapshot)  AS user_name,
              u.avatar_url AS user_avatar,
              u.company_id,
-             COALESCE(c.name,  b.company_name_snapshot)      AS company_name,
-             COALESCE(c.color, b.company_color_snapshot)     AS company_color,
-             b.start_time, b.end_time, b.status, b.recurrence_group_id, b.comment, b.created_at
+             COALESCE(c.name,  sc.name,  b.company_name_snapshot)      AS company_name,
+             COALESCE(c.color, sc.color, b.company_color_snapshot)     AS company_color,
+             COALESCE(c.logo_url, sc.logo_url, b.company_logo_snapshot) AS company_logo,
+             b.start_time, b.end_time, b.status, b.recurrence_group_id, b.comment,
+             b.guest_first_name, b.guest_last_name, b.guest_description, b.created_at
       FROM bookings b
       LEFT JOIN users u ON u.id = b.user_id
       LEFT JOIN companies c ON c.id = u.company_id
+      LEFT JOIN companies sc ON sc.name = b.company_name_snapshot
       WHERE b.room_id = $1 AND b.status IN ('pending', 'confirmed')`;
     // Массив параметров запроса.
     const params = [roomId];
@@ -128,13 +138,16 @@ class BookingRepository {
              COALESCE(u.display_name, b.user_name_snapshot) AS user_name,
              u.avatar_url AS user_avatar,
              u.company_id,
-             COALESCE(c.name,  b.company_name_snapshot)     AS company_name,
-             COALESCE(c.color, b.company_color_snapshot)    AS company_color,
-             b.start_time, b.end_time, b.status, b.recurrence_group_id, b.comment, b.created_at
+             COALESCE(c.name,  sc.name,  b.company_name_snapshot)     AS company_name,
+             COALESCE(c.color, sc.color, b.company_color_snapshot)    AS company_color,
+             COALESCE(c.logo_url, sc.logo_url, b.company_logo_snapshot) AS company_logo,
+             b.start_time, b.end_time, b.status, b.recurrence_group_id, b.comment,
+             b.guest_first_name, b.guest_last_name, b.guest_description, b.created_at
       FROM bookings b
       JOIN rooms r ON r.id = b.room_id
       LEFT JOIN users u ON u.id = b.user_id
       LEFT JOIN companies c ON c.id = u.company_id
+      LEFT JOIN companies sc ON sc.name = b.company_name_snapshot
       WHERE b.status IN ('pending', 'confirmed')`;
     const params = [];
     if (from) { params.push(from); query += ` AND b.end_time >= $${params.length}`; }
@@ -153,12 +166,14 @@ class BookingRepository {
               COALESCE(u.display_name, b.user_name_snapshot)  AS user_name,
               u.avatar_url AS user_avatar,
               u.company_id,
-              COALESCE(c.name,  b.company_name_snapshot)      AS company_name,
-              COALESCE(c.color, b.company_color_snapshot)     AS company_color,
-              b.start_time, b.end_time, b.status, b.comment, b.created_at
+              COALESCE(c.name,  sc.name,  b.company_name_snapshot)      AS company_name,
+              COALESCE(c.color, sc.color, b.company_color_snapshot)     AS company_color,
+              b.start_time, b.end_time, b.status, b.comment,
+              b.guest_first_name, b.guest_last_name, b.guest_description, b.created_at
        FROM bookings b
        LEFT JOIN users u ON u.id = b.user_id
        LEFT JOIN companies c ON c.id = u.company_id
+       LEFT JOIN companies sc ON sc.name = b.company_name_snapshot
        WHERE b.room_id = $1
        ORDER BY b.start_time DESC`,
       [roomId]
@@ -193,7 +208,8 @@ class BookingRepository {
     // Формируем запрос с JOIN на rooms для отображения имени комнаты.
     const { rows } = await pool.query(
       `SELECT b.id, b.room_id, r.name AS room_name,
-              b.start_time, b.end_time, b.status, b.comment, b.created_at
+              b.start_time, b.end_time, b.status, b.comment,
+              b.guest_first_name, b.guest_last_name, b.guest_description, b.created_at
        FROM bookings b
        JOIN rooms r ON r.id = b.room_id
        WHERE b.user_id = $1
@@ -206,7 +222,8 @@ class BookingRepository {
 
   static async findById(id) {
     const { rows } = await pool.query(
-      `SELECT b.id, b.room_id, b.user_id, b.start_time, b.end_time, b.status, b.comment, b.created_at,
+      `SELECT b.id, b.room_id, b.user_id, b.start_time, b.end_time, b.status, b.comment,
+              b.guest_first_name, b.guest_last_name, b.guest_description, b.created_at,
               b.recurrence_group_id,
               COALESCE(u.email,        b.user_email_snapshot) AS user_email,
               COALESCE(u.display_name, b.user_name_snapshot)  AS user_name,
@@ -230,7 +247,8 @@ class BookingRepository {
        WHERE id = $1
          AND status IN ('pending', 'confirmed')
        RETURNING id, room_id, user_id, start_time, end_time, status,
-                 recurrence_group_id, comment, created_at, updated_at`,
+                 recurrence_group_id, comment, guest_first_name, guest_last_name,
+                 guest_description, created_at, updated_at`,
       [id, newEndTime]
     );
     return rows[0] || null;

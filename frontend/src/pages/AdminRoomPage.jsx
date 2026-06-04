@@ -31,6 +31,8 @@ export const AdminRoomPage = () => {
   const [noMinLimit, setNoMinLimit] = useState(false);
   const [noMaxLimit, setNoMaxLimit] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
+  const [disabledReason, setDisabledReason] = useState("");
+  const [showDisableReason, setShowDisableReason] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -52,6 +54,8 @@ export const AdminRoomPage = () => {
       setNoMinLimit(room.min_booking_minutes == null);
       setNoMaxLimit(room.max_booking_minutes == null);
       setIsDisabled(room.is_disabled);
+      setDisabledReason(room.disabled_reason || "");
+      setShowDisableReason(room.is_disabled);
     }).catch(() => {});
   }, [roomId, token, isEdit]);
 
@@ -106,6 +110,10 @@ export const AdminRoomPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (isEdit && isDisabled && !disabledReason.trim()) {
+      setError("Skriv kvifor rommet er ute av drift.");
+      return;
+    }
     const payload = {
       ...form,
       minBookingMinutes: noMinLimit ? null : form.minBookingMinutes,
@@ -117,6 +125,13 @@ export const AdminRoomPage = () => {
     try {
       if (isEdit) {
         await apiFetch(`/rooms/${roomId}`, { method: "PUT", token, body: payload });
+        if (isDisabled) {
+          await apiFetch(`/rooms/${roomId}/disable`, {
+            method: "PATCH",
+            token,
+            body: { isDisabled: true, reason: disabledReason.trim() },
+          });
+        }
       } else {
         const created = await apiFetch("/rooms", { method: "POST", token, body: payload });
         if (pendingFiles.length > 0 && created?.id) {
@@ -138,12 +153,25 @@ export const AdminRoomPage = () => {
   };
 
   const handleToggleDisable = async () => {
+    const nextDisabled = !isDisabled;
+    if (nextDisabled && !showDisableReason) {
+      setShowDisableReason(true);
+      setError("");
+      return;
+    }
+    if (nextDisabled && !disabledReason.trim()) {
+      setError("Skriv kvifor rommet er ute av drift.");
+      return;
+    }
     try {
-      await apiFetch(`/rooms/${roomId}/disable`, {
+      const room = await apiFetch(`/rooms/${roomId}/disable`, {
         method: "PATCH", token,
-        body: { isDisabled: !isDisabled },
+        body: { isDisabled: nextDisabled, reason: disabledReason.trim() },
       });
-      setIsDisabled(!isDisabled);
+      setIsDisabled(room.is_disabled);
+      setDisabledReason(room.disabled_reason || "");
+      setShowDisableReason(room.is_disabled);
+      setError("");
     } catch (err) {
       alert(err.message);
     }
@@ -270,6 +298,17 @@ export const AdminRoomPage = () => {
               </div>
             </label>
           </div>
+          {isEdit && showDisableReason && (
+            <label className="form-label">{t.admin_room_disabled_reason}
+              <textarea
+                className="form-input form-textarea"
+                value={disabledReason}
+                onChange={(e) => setDisabledReason(e.target.value)}
+                placeholder={t.admin_room_disabled_reason_placeholder}
+                rows={3}
+              />
+            </label>
+          )}
           <button className="btn btn--primary btn--full" type="submit">{t.admin_room_save}</button>
           {isEdit && (
             <button className="btn btn--full" type="button" onClick={handleToggleDisable}>

@@ -1,7 +1,12 @@
 const BookingService = require("../services/bookingService");
 const BookingRepository = require("../models/bookingRepository");
 const HttpError = require("../utils/httpError");
-const { sendCancellationNotice } = require("../utils/mailer");
+const {
+  notifyBookingCreated,
+  notifyBookingUpdated,
+  notifyBookingCancelled,
+  notifySeriesCancelled,
+} = require("../utils/bookingNotifications");
 
 // Контроллер создания бронирования (одиночного или recurring).
 const createBooking = async (req, res, next) => {
@@ -15,6 +20,15 @@ const createBooking = async (req, res, next) => {
       endDateTime: req.body.endDateTime,
       recurring: req.body.recurring,
       comment: req.body.comment,
+      guestFirstName: req.body.guestFirstName,
+      guestLastName: req.body.guestLastName,
+      guestDescription: req.body.guestDescription,
+    });
+    notifyBookingCreated({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      roomId: req.body.roomId,
+      bookings: result.bookings,
     });
     // Возвращаем 201 Created с данными созданных бронирований.
     res.status(201).json({ success: true, data: result });
@@ -118,19 +132,10 @@ const cancel = async (req, res, next) => {
     if (req.user.role !== "admin" && booking.user_id !== req.user.id) {
       throw new HttpError(403, "You can only cancel your own bookings.");
     }
-    const isAdminCancellingOther = req.user.role === "admin" && booking.user_id !== req.user.id;
     const cancelled = await BookingRepository.cancel(req.params.id);
     if (!cancelled) throw new HttpError(400, "Booking already cancelled.");
 
-    if (isAdminCancellingOther && booking.user_email) {
-      const start = new Date(booking.start_time);
-      const end = new Date(booking.end_time);
-      const fmt = (d) => d.toLocaleString("nn-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-      sendCancellationNotice(booking.user_email, {
-        roomName: booking.room_name,
-        time: `${fmt(start)} — ${fmt(end)}`,
-      }).catch(() => {});
-    }
+    notifyBookingCancelled(booking);
 
     res.json({ success: true, data: cancelled });
   } catch (err) {
@@ -142,12 +147,14 @@ const cancel = async (req, res, next) => {
 // PATCH /api/bookings/:id — редактирование времени окончания.
 const updateBooking = async (req, res, next) => {
   try {
+    const bookingBefore = await BookingRepository.findById(req.params.id);
     const updated = await BookingService.updateBookingEndTime({
       bookingId: req.params.id,
       requesterId: req.user.id,
       requesterRole: req.user.role,
       newEndDateTime: req.body.endDateTime,
     });
+    notifyBookingUpdated(bookingBefore, updated);
     res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
@@ -157,11 +164,13 @@ const updateBooking = async (req, res, next) => {
 // DELETE /api/bookings/:id/series — отмена всей будущей серии recurring-бронирований.
 const cancelSeries = async (req, res, next) => {
   try {
+    const booking = await BookingRepository.findById(req.params.id);
     const result = await BookingService.cancelSeries({
       bookingId: req.params.id,
       requesterId: req.user.id,
       requesterRole: req.user.role,
     });
+    notifySeriesCancelled(booking, result.count);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

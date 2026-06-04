@@ -1,8 +1,8 @@
 // Модалка создания/редактирования брони — единая точка входа из календаря.
 // Логика:
 //  - mode "create" → даты можно править, доступен блок «Gjentakande møte».
-//  - mode "edit"   → start_time заблокирован, end_time можно ТОЛЬКО уменьшить
-//    (бэкенд это валидирует). Также показываются кнопки «Avbestill» и
+//  - mode "edit"   → start_time заблокирован, end_time можно менять
+//    (бэкенд валидирует конфликты). Также показываются кнопки «Avbestill» и
 //    «Avbestill heile serien» (последняя — если бронь часть серии).
 import React, { useEffect, useState } from "react";
 import { apiFetch } from "../api";
@@ -47,6 +47,10 @@ export const BookingModal = ({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [comment, setComment] = useState("");
+  const [guestFirstName, setGuestFirstName] = useState("");
+  const [guestDescription, setGuestDescription] = useState("");
+  const [showCommentFields, setShowCommentFields] = useState(false);
+  const [showGuestFields, setShowGuestFields] = useState(false);
   const [useRecurring, setUseRecurring] = useState(false);
   const [weekdays, setWeekdays] = useState(() => new Set());
   const [untilDate, setUntilDate] = useState("");
@@ -136,6 +140,8 @@ export const BookingModal = ({
           startDateTime: parseLocalInput(start).toISOString(),
           endDateTime: parseLocalInput(end).toISOString(),
           comment: comment.trim() || null,
+          guestFirstName: guestFirstName.trim() || null,
+          guestDescription: guestDescription.trim() || null,
           recurring,
         },
       });
@@ -222,7 +228,6 @@ export const BookingModal = ({
                 type="datetime-local"
                 value={end}
                 onChange={(e) => setEnd(e.target.value)}
-                max={isEdit && booking ? toLocalInput(new Date(booking.end_time)) : undefined}
                 required
               />
             </label>
@@ -233,17 +238,67 @@ export const BookingModal = ({
               </p>
             )}
 
-            <label className="form-label">{t.room_comment_label}
-              <textarea
-                className="form-input form-input--textarea"
-                rows={2}
-                maxLength={500}
-                placeholder={t.room_comment_placeholder_book}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                disabled={isEdit}
-              />
-            </label>
+            <div className="booking-collapsible">
+              <button
+                type="button"
+                className="booking-collapsible__toggle"
+                onClick={() => setShowCommentFields((open) => !open)}
+                aria-expanded={showCommentFields}
+              >
+                <span>{t.room_comment_label} (valfritt)</span>
+                <span aria-hidden="true">{showCommentFields ? "−" : "+"}</span>
+              </button>
+              {showCommentFields && (
+                <label className="form-label">
+                  <textarea
+                    className="form-input form-input--textarea"
+                    rows={2}
+                    maxLength={500}
+                    placeholder={t.room_comment_placeholder_book}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    disabled={isEdit}
+                  />
+                </label>
+              )}
+            </div>
+
+            {!isEdit && (
+              <div className="booking-collapsible">
+                <button
+                  type="button"
+                  className="booking-collapsible__toggle"
+                  onClick={() => setShowGuestFields((open) => !open)}
+                  aria-expanded={showGuestFields}
+                >
+                  <span>{t.booking_guest_title}</span>
+                  <span aria-hidden="true">{showGuestFields ? "−" : "+"}</span>
+                </button>
+                {showGuestFields && (
+                  <fieldset className="booking-guest-fields">
+                    <label className="form-label">{t.booking_guest_names}
+                      <input
+                        className="form-input"
+                        value={guestFirstName}
+                        onChange={(e) => setGuestFirstName(e.target.value)}
+                        maxLength={300}
+                        placeholder={t.booking_guest_names_placeholder}
+                      />
+                    </label>
+                    <label className="form-label">{t.booking_guest_description}
+                      <textarea
+                        className="form-input form-input--textarea"
+                        rows={2}
+                        maxLength={500}
+                        placeholder={t.booking_guest_description_placeholder}
+                        value={guestDescription}
+                        onChange={(e) => setGuestDescription(e.target.value)}
+                      />
+                    </label>
+                  </fieldset>
+                )}
+              </div>
+            )}
 
             {!isEdit && (
               <>

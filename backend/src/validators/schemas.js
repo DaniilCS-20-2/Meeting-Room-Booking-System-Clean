@@ -152,6 +152,9 @@ const createBookingSchema = z
     startDateTime: z.string().min(5).max(40),
     endDateTime: z.string().min(5).max(40),
     comment: optionalStr(500),
+    guestFirstName: optionalStr(300),
+    guestLastName: optionalStr(100),
+    guestDescription: optionalStr(500),
     recurring: recurringSchema.optional().nullable(),
   })
   .strict();

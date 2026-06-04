@@ -28,7 +28,11 @@ export const AdminUsersPage = () => {
   const [companies, setCompanies] = useState([]);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newCompanyColor, setNewCompanyColor] = useState("#3b82f6");
+  const [companyColorDrafts, setCompanyColorDrafts] = useState({});
   const [companyError, setCompanyError] = useState("");
+  const companyColorTimers = useRef({});
+  const companyLogoRef = useRef(null);
+  const [logoCompanyId, setLogoCompanyId] = useState(null);
 
   useEffect(() => {
     if (!token) return;
@@ -36,6 +40,10 @@ export const AdminUsersPage = () => {
     apiFetch("/admin/whitelist", { token }).then(setWhitelist).catch(() => {});
     apiFetch("/admin/companies", { token }).then(setCompanies).catch(() => {});
   }, [token]);
+
+  useEffect(() => () => {
+    Object.values(companyColorTimers.current).forEach(clearTimeout);
+  }, []);
 
   const handleCompanyAdd = async (e) => {
     e.preventDefault();
@@ -61,8 +69,74 @@ export const AdminUsersPage = () => {
       setCompanies((prev) =>
         prev.map((c) => (c.id === id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name))
       );
+      setUsers((prev) => prev.map((u) => (u.company_id === id
+        ? {
+          ...u,
+          company_name: updated.name,
+          company_color: updated.color,
+        }
+        : u)));
+      return updated;
     } catch (err) {
       alert(err.message);
+      return null;
+    }
+  };
+
+  const clearCompanyColorDraft = (id, color) => {
+    setCompanyColorDrafts((prev) => {
+      if (color && prev[id] && prev[id] !== color) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const saveCompanyColor = async (id, color, savedColor) => {
+    if (!color || color === savedColor) {
+      clearCompanyColorDraft(id, color);
+      return;
+    }
+    const updated = await handleCompanyUpdate(id, { color });
+    if (updated) clearCompanyColorDraft(id, color);
+  };
+
+  const scheduleCompanyColorSave = (id, color, savedColor) => {
+    setCompanyColorDrafts((prev) => ({ ...prev, [id]: color }));
+    clearTimeout(companyColorTimers.current[id]);
+    companyColorTimers.current[id] = setTimeout(() => {
+      delete companyColorTimers.current[id];
+      saveCompanyColor(id, color, savedColor);
+    }, 700);
+  };
+
+  const commitCompanyColor = (id, color, savedColor) => {
+    clearTimeout(companyColorTimers.current[id]);
+    delete companyColorTimers.current[id];
+    saveCompanyColor(id, color, savedColor);
+  };
+
+  const pickCompanyLogo = (id) => {
+    setLogoCompanyId(id);
+    companyLogoRef.current?.click();
+  };
+
+  const handleCompanyLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    const id = logoCompanyId;
+    if (!file || !id) return;
+    try {
+      const updated = await apiUpload(`/admin/companies/${id}/logo`, {
+        file, fieldName: "logo", token,
+      });
+      setCompanies((prev) =>
+        prev.map((c) => (c.id === id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name))
+      );
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      e.target.value = "";
+      setLogoCompanyId(null);
     }
   };
 
@@ -324,6 +398,22 @@ export const AdminUsersPage = () => {
 
       <h2 className="subsection-title" style={{ marginTop: 32 }}>{t.admin_companies_title}</h2>
       <p className="helper-text">{t.admin_companies_hint}</p>
+      <p className="helper-text tv-display-url-hint">
+        {t.admin_companies_display_url}:{" "}
+        <code>{typeof window !== "undefined" ? `${window.location.origin}/display` : "/display"}</code>
+      </p>
+      <p className="helper-text tv-display-url-hint">
+        {t.admin_companies_display_preview_url}:{" "}
+        <code>{typeof window !== "undefined" ? `${window.location.origin}/display?preview=1` : "/display?preview=1"}</code>
+      </p>
+
+      <input
+        ref={companyLogoRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={handleCompanyLogoUpload}
+      />
 
       <form className="company-add" onSubmit={handleCompanyAdd}>
         <input
@@ -355,6 +445,18 @@ export const AdminUsersPage = () => {
         {companies.length === 0 && <p className="helper-text">{t.admin_companies_empty}</p>}
         {companies.map((c) => (
           <div key={c.id} className="company-item">
+            <button
+              type="button"
+              className="company-item__logo"
+              onClick={() => pickCompanyLogo(c.id)}
+              title={c.logo_url ? t.admin_companies_change_logo : t.admin_companies_add_logo}
+            >
+              {c.logo_url ? (
+                <img src={resolveUploadUrl(c.logo_url)} alt="" />
+              ) : (
+                <span className="company-item__logo-placeholder">{t.admin_companies_logo}</span>
+              )}
+            </button>
             <span
               className="company-dot"
               style={{ background: c.color }}
@@ -371,15 +473,18 @@ export const AdminUsersPage = () => {
             />
             <label
               className="color-chip company-item__color"
-              style={{ background: c.color, color: "#fff" }}
+              style={{ background: companyColorDrafts[c.id] || c.color, color: "#fff" }}
               title={t.admin_companies_change_color}
             >
               <span className="color-chip__label">{t.admin_companies_change_color}</span>
               <input
                 type="color"
                 className="color-chip__input"
-                defaultValue={c.color}
-                onChange={(e) => handleCompanyUpdate(c.id, { color: e.target.value })}
+                value={companyColorDrafts[c.id] || c.color}
+                onChange={(e) => {
+                  scheduleCompanyColorSave(c.id, e.target.value, c.color);
+                }}
+                onBlur={(e) => commitCompanyColor(c.id, e.target.value, c.color)}
               />
             </label>
             <button

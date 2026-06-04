@@ -7,6 +7,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api";
 import { t } from "../i18n/labels";
+import {
+  chunkMergeClassName,
+  getRoomChunkMergeFlags,
+} from "../utils/calendarMerge";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
@@ -85,6 +89,46 @@ export const OverviewCalendar = ({
 
   const weekDays = useMemo(() => buildWeekGrid(weekStart), [weekStart]);
 
+  const slotGrid = useMemo(() => {
+    const grid = {};
+    for (const d of weekDays) {
+      for (const h of HOURS) {
+        const slotStart = new Date(d);
+        slotStart.setHours(h, 0, 0, 0);
+        const slotEnd = new Date(slotStart.getTime() + 3600000);
+        const overlapping = bookings.filter((b) => {
+          const bs = new Date(b.start_time).getTime();
+          const be = new Date(b.end_time).getTime();
+          return slotStart.getTime() < be && slotEnd.getTime() > bs;
+        });
+
+        const key = `${d.toISOString()}:${h}`;
+        if (!overlapping.length) {
+          grid[key] = null;
+          continue;
+        }
+
+        const byRoom = new Map();
+        for (const b of overlapping) {
+          const roomKey = b.room_id;
+          if (!byRoom.has(roomKey)) {
+            byRoom.set(roomKey, {
+              roomId: b.room_id,
+              roomName: b.room_name,
+              color: b.room_color || colorForRoom(b.room_id),
+              bookings: [],
+            });
+          }
+          byRoom.get(roomKey).bookings.push(b);
+        }
+        const rooms = [...byRoom.values()].sort((a, b) => a.roomName.localeCompare(b.roomName));
+        const allPast = overlapping.every((b) => new Date(b.end_time) <= new Date());
+        grid[key] = { rooms, allBookings: overlapping, past: allPast };
+      }
+    }
+    return grid;
+  }, [bookings, weekDays]);
+
   // Уникальный список комнат (для легенды). Цвет = админский room_color, fallback — хэш.
   const roomLegend = useMemo(() => {
     const map = new Map();
@@ -102,36 +146,7 @@ export const OverviewCalendar = ({
 
   // Группируем пересекающиеся брони по комнатам, чтобы в одном часовом слоте
   // отображать ВСЕ занятые комнаты рядом (а не только самую раннюю).
-  const slotInfo = (day, hour) => {
-    const slotStart = new Date(day);
-    slotStart.setHours(hour, 0, 0, 0);
-    const slotEnd = new Date(slotStart.getTime() + 3600000);
-    const overlapping = bookings.filter((b) => {
-      const bs = new Date(b.start_time).getTime();
-      const be = new Date(b.end_time).getTime();
-      return slotStart.getTime() < be && slotEnd.getTime() > bs;
-    });
-    if (!overlapping.length) return null;
-
-    // По одному «чанку» на комнату; внутри чанка — все её брони этого часа.
-    // Цвет берём из `room_color` (если админ задал его), иначе хэш-фолбэк.
-    const byRoom = new Map();
-    for (const b of overlapping) {
-      const key = b.room_id;
-      if (!byRoom.has(key)) {
-        byRoom.set(key, {
-          roomId: b.room_id,
-          roomName: b.room_name,
-          color: b.room_color || colorForRoom(b.room_id),
-          bookings: [],
-        });
-      }
-      byRoom.get(key).bookings.push(b);
-    }
-    const rooms = [...byRoom.values()].sort((a, b) => a.roomName.localeCompare(b.roomName));
-    const allPast = overlapping.every((b) => new Date(b.end_time) <= new Date());
-    return { rooms, allBookings: overlapping, past: allPast };
-  };
+  const slotInfo = (day, hour) => slotGrid[`${day.toISOString()}:${hour}`] || null;
 
   const prevWeek = () => setWeekStart(new Date(weekStart.getTime() - 7 * 86400000));
   const nextWeek = () => setWeekStart(new Date(weekStart.getTime() + 7 * 86400000));
@@ -152,7 +167,9 @@ export const OverviewCalendar = ({
   return (
     <section className={`overview-cal ${fullscreen ? "overview-cal--fullscreen" : ""}`}>
       <div className="overview-cal__head">
-        <h2 className="section-title overview-cal__title">{t.home_overview_calendar}</h2>
+        {!fullscreen && (
+          <h2 className="section-title overview-cal__title">{t.home_overview_calendar}</h2>
+        )}
         <div className="overview-cal__actions">
           <div className="calendar-nav">
             <button type="button" className="btn btn--small" onClick={prevWeek}>&larr;</button>
@@ -227,6 +244,7 @@ export const OverviewCalendar = ({
                       <div className="overview-cal__chunks">
                         {info.rooms.map((r) => {
                           const color = r.color;
+                          const chunkMerge = getRoomChunkMergeFlags(slotGrid, d, h, r.roomId);
                           const chunkStyle = info.past
                             ? undefined
                             : { background: color, color: getContrastText(color) };
@@ -234,7 +252,7 @@ export const OverviewCalendar = ({
                             <button
                               key={r.roomId}
                               type="button"
-                              className={`overview-cal__chunk ${info.past ? "overview-cal__chunk--past" : ""}`}
+                              className={`overview-cal__chunk ${info.past ? "overview-cal__chunk--past" : ""}${chunkMergeClassName(chunkMerge)}`}
                               style={chunkStyle}
                               onClick={(e) => { e.stopPropagation(); navigate(`/rooms/${r.roomId}`); }}
                               aria-label={r.roomName}
@@ -258,6 +276,13 @@ export const OverviewCalendar = ({
                               <div className="cal-tip__company">
                                 <span className="cal-tip__dot" style={{ background: b.company_color || "#9ca3af" }} />
                                 {b.company_name}
+                              </div>
+                            )}
+                            {(b.guest_first_name || b.guest_last_name || b.guest_description) && (
+                              <div className="cal-tip__comment">
+                                <strong>{t.tooltip_guest}:</strong>{" "}
+                                {[b.guest_first_name, b.guest_last_name].filter(Boolean).join(" ")}
+                                {b.guest_description ? ` — ${b.guest_description}` : ""}
                               </div>
                             )}
                             {b.comment && <div className="cal-tip__comment">{b.comment}</div>}

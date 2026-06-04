@@ -19,6 +19,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 // Публичные маршруты компаний (список для страницы регистрации).
 const companyRoutes = require("./routes/companyRoutes");
+const displayRoutes = require("./routes/displayRoutes");
 
 // Импортируем глобальный middleware обработки ошибок.
 const errorMiddleware = require("./middlewares/errorMiddleware");
@@ -46,7 +47,13 @@ app.use(
             styleSrc: ["'self'", "'unsafe-inline'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
-            frameAncestors: ["'none'"],
+            // Infoskjermen встраивает /display в iframe на TV.
+            frameAncestors: [
+              "'self'",
+              "https://app.infoskjermen.no",
+              "https://infoskjermen.no",
+              "https://www.infoskjermen.no",
+            ],
           },
         }
       : false,
@@ -94,7 +101,20 @@ app.use("/api/bookings", bookingRoutes); // Бронирования.
 app.use("/api/profile", profileRoutes);  // Профиль пользователя.
 app.use("/api/comments", commentRoutes); // Комментарии к комнатам.
 app.use("/api/companies", companyRoutes); // Публичный список компаний.
+app.use("/api/display", displayRoutes);   // Infoskjerm / korridor-TV.
 app.use("/api/admin", adminRoutes);      // Администрирование пользователей.
+
+// Production: отдаём собранный React (backend/public) с одного домена.
+if (env.isProd) {
+  const publicDir = path.join(__dirname, "../public");
+  app.use(express.static(publicDir, { index: false }));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads") || req.path === "/health") {
+      return next();
+    }
+    res.sendFile(path.join(publicDir, "index.html"));
+  });
+}
 
 // Подключаем глобальный обработчик ошибок (должен быть последним middleware).
 app.use(errorMiddleware);

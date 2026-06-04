@@ -72,7 +72,7 @@ const remove = async (req, res, next) => {
 const toggleDisabled = async (req, res, next) => {
   try {
     // Переключаем флаг отключения по id и значению из тела запроса.
-    const room = await RoomService.toggleDisabled(req.params.id, req.body.isDisabled);
+    const room = await RoomService.toggleDisabled(req.params.id, req.body.isDisabled, req.body.reason);
     // Возвращаем 200 с обновлёнными данными комнаты.
     res.json({ success: true, data: room });
   } catch (err) {

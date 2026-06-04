@@ -29,7 +29,7 @@ const memoryUpload = multer({
 
 // Middleware-обёртка: принимает fieldName + prefix для имени файла и
 // возвращает последовательность middleware для роутера.
-const processImage = ({ fieldName = "file", prefix = "img", maxSide = 1024, quality = 85 } = {}) => {
+const processImage = ({ fieldName = "file", prefix = "img", maxSide = 1024, quality = 85, preferPng = false } = {}) => {
   const mwMulter = memoryUpload.single(fieldName);
 
   const mwProcess = async (req, res, next) => {
@@ -45,22 +45,29 @@ const processImage = ({ fieldName = "file", prefix = "img", maxSide = 1024, qual
       // Перекодируем через sharp: ресайз (не больше maxSide по длинной стороне),
       // JPEG + strip metadata. Это убивает EXIF, GPS, XMP, ICC и любые
       // хитро вшитые «полиглоты».
-      const processedBuffer = await sharp(req.file.buffer, { failOn: "error" })
-        .rotate() // учитываем EXIF orientation перед удалением метаданных
+      const pipeline = sharp(req.file.buffer, { failOn: "error" })
+        .rotate()
         .resize({
           width: maxSide,
           height: maxSide,
           fit: "inside",
           withoutEnlargement: true,
-        })
-        .jpeg({ quality, mozjpeg: true })
-        .withMetadata({}) // sharp удалит EXIF по умолчанию
-        .toBuffer();
+        });
 
-      // Безопасное имя: только latin + случайный суффикс, расширение .jpg.
+      const usePng = preferPng && (detected.ext === "png" || detected.ext === "webp");
+      let processedBuffer;
+      let ext;
+      if (usePng) {
+        processedBuffer = await pipeline.png({ compressionLevel: 9 }).toBuffer();
+        ext = "png";
+      } else {
+        processedBuffer = await pipeline.jpeg({ quality, mozjpeg: true }).withMetadata({}).toBuffer();
+        ext = "jpg";
+      }
+
       const safePrefix = String(prefix).replace(/[^a-z0-9_-]/gi, "").slice(0, 60) || "img";
       const rand = crypto.randomBytes(6).toString("hex");
-      const filename = `${safePrefix}-${Date.now()}-${rand}.jpg`;
+      const filename = `${safePrefix}-${Date.now()}-${rand}.${ext}`;
 
       await fs.mkdir(UPLOAD_DIR, { recursive: true });
       await fs.writeFile(path.join(UPLOAD_DIR, filename), processedBuffer);

@@ -1,7 +1,7 @@
 // Импортируем React и необходимые хуки.
 import React, { useEffect, useState } from "react";
-// Импортируем Link для навигации и useNavigate для программных переходов.
-import { Link, useNavigate } from "react-router-dom";
+// Импортируем Link для навигации.
+import { Link } from "react-router-dom";
 // Импортируем хук аутентификации для проверки статуса пользователя.
 import { useAuth } from "../context/AuthContext";
 // Импортируем обёртку для API-запросов к backend.
@@ -12,10 +12,8 @@ import { OverviewCalendar } from "../components/OverviewCalendar";
 
 // Главная страница приложения.
 export const HomePage = () => {
-  // Получаем данные пользователя, токен и функцию выхода из контекста.
-  const { user, token, logout } = useAuth();
-  // Получаем функцию программной навигации.
-  const navigate = useNavigate();
+  // Получаем данные пользователя и токен из контекста.
+  const { user, token } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [confirmAction, setConfirmAction] = useState(null);
 
@@ -29,9 +27,6 @@ export const HomePage = () => {
   const isAnonymous = !user;
   // Признак админа — для отображения админских кнопок.
   const isAdmin = !!user && user.role === "admin";
-  // Берём первую букву имени для отображения в кружке аватара.
-  const initials = user ? (user.display_name || user.email || "U").charAt(0).toUpperCase() : "";
-
   const handleDelete = (roomId, roomName) => {
     setConfirmAction({
       title: "Slett rom",
@@ -50,41 +45,6 @@ export const HomePage = () => {
 
   return (
     <section className="home-page page">
-      <div className="home-topbar">
-        <div className="home-topbar__right">
-          {isAnonymous ? (
-            <>
-              <Link className="home-btn home-btn--ghost" to="/auth?mode=login">{t.home_login_btn}</Link>
-              <Link className="home-btn home-btn--primary" to="/auth?mode=register">{t.home_register_btn}</Link>
-            </>
-          ) : (
-            <>
-              {isAdmin && (
-                <>
-                  <Link className="home-btn home-btn--primary home-btn--icon-only" to="/admin/rooms/new" title={t.room_add} aria-label={t.room_add}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{marginRight: 4, verticalAlign: "middle"}}>
-                      <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                    <span className="home-btn__label">{t.room_add}</span>
-                  </Link>
-                  <Link className="home-btn home-btn--ghost home-btn--icon-only" to="/admin/users" title={t.room_manage_users} aria-label={t.room_manage_users}>
-                    <svg width="18" height="16" viewBox="0 0 24 20" fill="currentColor" style={{marginRight: 4, verticalAlign: "middle"}}>
-                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                    </svg>
-                    <span className="home-btn__label">{t.room_manage_users}</span>
-                  </Link>
-                </>
-              )}
-              <button type="button" className="avatar-btn" onClick={() => navigate("/profile")}>
-                {user.avatar_url
-                  ? <img src={resolveUploadUrl(user.avatar_url)} alt="" className="avatar-btn__img" />
-                  : <span className="avatar-btn__initials">{initials}</span>}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Заголовок: для анонима — приветствие, для залогиненных — секция комнат. */}
       <h1 className="home-page__title">
         {isAnonymous ? t.home_welcome : t.home_title}
@@ -136,6 +96,11 @@ export const HomePage = () => {
                 </p>
                 {/* Текст ближайшего события (если есть). */}
                 {nearestText && <p className="home-card__nearest">{nearestText}</p>}
+                {isOff && (
+                  <p className="home-card__nearest">
+                    {room.disabled_reason || t.room_unavailable_default}
+                  </p>
+                )}
               </Link>
               {/* Кнопки редактирования/удаления — только для админа. */}
               {isAdmin && (

@@ -115,6 +115,10 @@ export const t = {
   admin_room_save: "Lagre rom",              // Кнопка: сохранить комнату.
   admin_room_disable: "Deaktiver rom",       // Кнопка: отключить комнату.
   admin_room_enable: "Aktiver rom",          // Кнопка: включить комнату.
+  admin_room_disabled_reason: "Kvifor er rommet ute av drift?",
+  admin_room_disabled_reason_placeholder: "Til dømes: projektoren er øydelagd, vedlikehald, reinhald...",
+  room_unavailable_title: "Rommet er mellombels ute av drift",
+  room_unavailable_default: "Dette rommet kan ikkje bookast akkurat no.",
 
   // ============= Админ: страница пользователей =============
   admin_users_title: "Brukaradministrasjon", // Заголовок: управление пользователями.
@@ -142,6 +146,12 @@ export const t = {
   // ============= Booking-kommentar / tooltip =============
   room_comment_label: "Skildring",
   room_comment_placeholder_book: "Kva skal møtet handle om? (valfritt)",
+  booking_guest_title: "Gjest (valfritt)",
+  booking_guest_names: "Namn på gjest(ar)",
+  booking_guest_names_placeholder: "Til dømes: Ola Nordmann, Kari Hansen",
+  booking_guest_description: "Skildring av gjest",
+  booking_guest_description_placeholder: "Til dømes: ekstern kunde, besøksbehov, telefonnummer...",
+  tooltip_guest: "Gjest",
   tooltip_user: "Brukar",
   tooltip_company: "Selskap",
   tooltip_comment: "Skildring",
@@ -156,7 +166,7 @@ export const t = {
   auth_company_placeholder: "Vel selskap",
   admin_users_company: "Selskap",
   admin_companies_title: "Selskap",
-  admin_companies_hint: "Legg til, endre eller fjern selskap. Fargen vert brukt i kalenderen.",
+  admin_companies_hint: "Legg til, endre eller fjern selskap. Farge og logo vert brukt i kalender og på infoskjerm.",
   admin_companies_name: "Namn",
   admin_companies_color: "Farge",
   admin_companies_add: "Legg til",
@@ -165,7 +175,19 @@ export const t = {
   admin_companies_empty: "Ingen selskap enno.",
   admin_companies_change_color: "Endre farge",
   admin_companies_pick_color: "Vel farge",
+  admin_companies_logo: "Logo",
+  admin_companies_add_logo: "Last opp logo",
+  admin_companies_change_logo: "Endre logo",
+  admin_companies_display_url: "Infoskjerm-URL",
+  admin_companies_display_preview_url: "Førehandsvis transparent bakgrunn",
   company_none: "Utan selskap",
+
+  // ============= Korridor-TV / infoskjerm =============
+  display_title: "Møter i dag",
+  display_loading: "Lastar…",
+  display_empty: "Ingen møter i dag.",
+  display_with: "med",
+  display_preview_hint: "Førehandsvising: grå ruter = transparent bakgrunn. I Infoskjermen bruk /display utan ?preview=1.",
 
   // ============= Booking-modal =============
   modal_title_create: "Ny booking",

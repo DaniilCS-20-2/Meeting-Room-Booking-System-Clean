@@ -1,0 +1,46 @@
+# Сборка frontend + деплой папки backend в Azure Web App.
+# Секрет: AZURE_WEBAPP_PUBLISH_PROFILE (Publish profile из Portal → Web App → Get publish profile)
+
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+env:
+  # Замените на имя вашего Web App в Azure (без .azurewebsites.net)
+  AZURE_WEBAPP_NAME: ferma-booking
+  NODE_VERSION: "20"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Build frontend into backend/public
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install backend production dependencies
+        working-directory: backend
+        run: npm ci --omit=dev
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: backend

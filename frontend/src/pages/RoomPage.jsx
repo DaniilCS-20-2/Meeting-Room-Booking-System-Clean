@@ -8,6 +8,7 @@ import { apiFetch, resolveUploadUrl } from "../api";
 import { t } from "../i18n/labels";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { BookingModal } from "../components/BookingModal";
+import { getMergeFlags, mergeClassName } from "../utils/calendarMerge";
 
 // Вспомогательная функция: генерируем массив из 7 дней начиная с указанной даты.
 // Используется для построения недельного календаря.
@@ -135,8 +136,10 @@ export const RoomPage = () => {
   const isViewer = user?.role === "viewer";
   // Тот, кому разрешено бронировать/комментировать: НЕ аноним и НЕ viewer.
   const canWrite = !isAnonymous && !isViewer;
+  const canBook = canWrite && !room?.is_disabled;
   const [historySort, setHistorySort] = useState("time");
   const [confirmAction, setConfirmAction] = useState(null);
+  const [companies, setCompanies] = useState([]);
 
   // Загружаем данные комнаты — публичный эндпоинт, токен опционален.
   useEffect(() => {
@@ -156,6 +159,39 @@ export const RoomPage = () => {
   };
   useEffect(loadBookings, [roomId, token, weekStart]);
 
+  // Легенда календаря должна показывать все компании из админки, даже если
+  // у части компаний нет броней в этой комнате на текущей неделе.
+  useEffect(() => {
+    if (!canWrite) {
+      setCompanies([]);
+      return;
+    }
+    apiFetch("/companies").then(setCompanies).catch(() => setCompanies([]));
+  }, [canWrite]);
+
+  const companyLookup = useMemo(() => {
+    const byId = new Map();
+    const byName = new Map();
+    for (const company of companies) {
+      byId.set(company.id, company);
+      byName.set(company.name, company);
+    }
+    return { byId, byName };
+  }, [companies]);
+
+  const withCurrentCompanyColor = useCallback((booking) => {
+    const currentCompany = (
+      (booking.company_id && companyLookup.byId.get(booking.company_id)) ||
+      (booking.company_name && companyLookup.byName.get(booking.company_name))
+    );
+    if (!currentCompany) return booking;
+    return {
+      ...booking,
+      company_name: currentCompany.name,
+      company_color: currentCompany.color,
+    };
+  }, [companyLookup]);
+
   // Комментарии к комнате — только для авторизованных.
   const loadComments = () => {
     if (!token) return;
@@ -167,7 +203,7 @@ export const RoomPage = () => {
   // Если forcedStart/forcedEnd переданы (например, свободный gap в частично занятой ячейке),
   // используем их; иначе даём слот в 1 час.
   const openCreateModal = (day, hour, forcedStart = null, forcedEnd = null) => {
-    if (!canWrite) return;
+    if (!canBook) return;
     const cellStart = new Date(day);
     cellStart.setHours(hour, 0, 0, 0);
     // Слот в прошлом — не открываем модалку.
@@ -181,7 +217,7 @@ export const RoomPage = () => {
   // Открытие модалки из «зелёных кнопок» ближайших свободных слотов.
   // Время уже подобрано так, чтобы не пересекаться с занятыми бронями.
   const openCreateFromSlot = (slot) => {
-    if (!canWrite) return;
+    if (!canBook) return;
     const now = new Date(); now.setSeconds(0, 0);
     const safeStart = new Date(now.getTime() + 60_000);
     const start = slot.start <= safeStart ? safeStart : slot.start;
@@ -197,7 +233,7 @@ export const RoomPage = () => {
   // Ближайшие свободные «окошки» — берём из списка активных бронирований
   // (для авторизованных канWrite). Анону/viewer не показываем.
   const freeSlots = useMemo(() => {
-    if (!canWrite) return [];
+    if (!canBook) return [];
     const now = new Date();
     now.setSeconds(0, 0);
 
@@ -242,11 +278,11 @@ export const RoomPage = () => {
       if (daySlots.length >= 4) break;
     }
     return daySlots;
-  }, [canWrite, history, room]);
+  }, [canBook, history, room]);
 
   // Открытие модалки для редактирования брони — клик по своей/любой (для админа) занятой ячейке.
   const openEditModal = (booking) => {
-    if (!canWrite || !booking) return;
+    if (!canBook || !booking) return;
     const isOwner = booking.user_id && booking.user_id === user?.id;
     if (!isOwner && !isAdmin) return;
     if (new Date(booking.end_time) <= new Date()) return; // прошлые не редактируем
@@ -298,7 +334,7 @@ export const RoomPage = () => {
   }, [drag, finishDrag]);
 
   const handleCellMouseDown = (day, hour, isFree, cellInPast) => {
-    if (!canWrite || cellInPast || !isFree) return;
+    if (!canBook || cellInPast || !isFree) return;
     setDrag({ day, hourStart: hour, hourEnd: hour });
   };
 
@@ -485,8 +521,9 @@ export const RoomPage = () => {
 
     if (overlapping.length === 0) return null;
 
+    const currentBookings = overlapping.map(withCurrentCompanyColor);
     const labels = [];
-    for (const b of overlapping) {
+    for (const b of currentBookings) {
       const bs = new Date(b.start_time);
       const be = new Date(b.end_time);
       const bsIn = bs >= slotStart && bs < slotEnd;
@@ -495,9 +532,8 @@ export const RoomPage = () => {
       else if (bsIn) labels.push(fmt(bs));
       else if (beIn) labels.push(fmt(be));
     }
-    const allPast = overlapping.every((b) => new Date(b.end_time) <= new Date());
-    // Доминирующая компания/пользователь в слоте — самая ранняя из пересекающихся.
-    const sorted = [...overlapping].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    const allPast = currentBookings.every((b) => new Date(b.end_time) <= new Date());
+    const sorted = [...currentBookings].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
     const primary = sorted[0];
     return {
       booked: true,
@@ -507,10 +543,22 @@ export const RoomPage = () => {
       companyName: primary?.company_name || null,
       userName: primary?.user_name || null,
       comment: primary?.comment || null,
-      // Если в час попало несколько броней — отдадим все, чтобы тултип это показал.
+      guestFirstName: primary?.guest_first_name || null,
+      guestLastName: primary?.guest_last_name || null,
+      guestDescription: primary?.guest_description || null,
       bookings: sorted,
     };
   };
+
+  const slotGrid = useMemo(() => {
+    const grid = {};
+    for (const d of weekDays) {
+      for (const h of HOURS) {
+        grid[`${d.toISOString()}:${h}`] = getSlotInfo(d, h);
+      }
+    }
+    return grid;
+  }, [weekDays, bookings, withCurrentCompanyColor]);
 
   const fmtDate = (d) => d.toLocaleDateString("nn-NO", { day: "numeric", month: "short" });
   const fmtClock = (d) => d.toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
@@ -558,7 +606,13 @@ export const RoomPage = () => {
           <h1 className="room-page__title">{room.name}</h1>
 
           {/* Ближайшие свободные слоты + подсказка про кликабельный календарь. */}
-          {canWrite && (
+          {room.is_disabled && (
+            <div className="room-disabled-notice">
+              <strong>{t.room_unavailable_title}</strong>
+              <p>{room.disabled_reason || t.room_unavailable_default}</p>
+            </div>
+          )}
+          {canBook && (
             <>
               {freeSlots.length > 0 && (
                 <>
@@ -624,10 +678,13 @@ export const RoomPage = () => {
             seen.set(b.company_id, { name: b.company_name, color: b.company_color });
           }
         }
-        if (seen.size === 0) return null;
+        const legendItems = companies.length > 0
+          ? companies.map((c) => [c.id, { name: c.name, color: c.color }])
+          : [...seen.entries()];
+        if (legendItems.length === 0) return null;
         return (
           <div className="calendar-legend">
-            {[...seen.entries()].map(([id, c]) => (
+            {legendItems.map(([id, c]) => (
               <span key={id} className="calendar-legend__item">
                 <span className="calendar-legend__dot" style={{ background: c.color }} />
                 {c.name}
@@ -655,9 +712,8 @@ export const RoomPage = () => {
               {/* Метка часа в левом столбце. */}
               <div className="calendar-grid__hour">{String(h).padStart(2, "0")}:00</div>
               {weekDays.map((d, dayIdx) => {
-                const info = getSlotInfo(d, h);
-                // В read-only режиме (viewer/аноним) ячейка нейтрально-серая,
-                // никаких цветов компаний и точных минут наружу.
+                const info = slotGrid[`${d.toISOString()}:${h}`];
+                const merge = info?.booked ? getMergeFlags(slotGrid, d, h) : null;
                 const cellStyle = info?.booked && !info.past && info.color && canWrite
                   ? { background: info.color, borderColor: info.color, color: getContrastText(info.color) }
                   : undefined;
@@ -676,7 +732,7 @@ export const RoomPage = () => {
                 let onCellMouseEnter = null;
                 let onCellKeyDown = null;
                 let cellClickable = false;
-                if (canWrite && !cellInPast) {
+                if (canBook && !cellInPast) {
                   if (isFree) {
                     // Свободная ячейка: drag для выделения диапазона, click для 1ч-слота
                     onCellMouseDown = () => handleCellMouseDown(d, h, true, cellInPast);
@@ -714,7 +770,7 @@ export const RoomPage = () => {
 
                 return (
                   <div key={d.toISOString() + h}
-                    className={`calendar-grid__cell ${info?.booked ? (info.past ? "calendar-grid__cell--past" : "calendar-grid__cell--booked") : ""}${cellClickable ? " calendar-grid__cell--clickable" : ""}${dragSelected ? " calendar-grid__cell--drag" : ""}${isExpiredFree ? " calendar-grid__cell--expired" : ""}`}
+                    className={`calendar-grid__cell ${info?.booked ? (info.past ? "calendar-grid__cell--past" : "calendar-grid__cell--booked") : ""}${merge ? mergeClassName(merge) : ""}${cellClickable ? " calendar-grid__cell--clickable" : ""}${dragSelected ? " calendar-grid__cell--drag" : ""}${isExpiredFree ? " calendar-grid__cell--expired" : ""}`}
                     style={cellStyle}
                     onMouseDown={onCellMouseDown}
                     onMouseEnter={onCellMouseEnter}
@@ -738,6 +794,13 @@ export const RoomPage = () => {
                               <div className="cal-tip__company">
                                 <span className="cal-tip__dot" style={{ background: b.company_color || "#9ca3af" }} />
                                 {b.company_name}
+                              </div>
+                            )}
+                            {(b.guest_first_name || b.guest_last_name || b.guest_description) && (
+                              <div className="cal-tip__comment">
+                                <strong>{t.tooltip_guest}:</strong>{" "}
+                                {[b.guest_first_name, b.guest_last_name].filter(Boolean).join(" ")}
+                                {b.guest_description ? ` — ${b.guest_description}` : ""}
                               </div>
                             )}
                             {b.comment && (
@@ -795,6 +858,12 @@ export const RoomPage = () => {
                       {b.company_name}
                     </span>
                   )}
+                  {(b.guest_first_name || b.guest_last_name || b.guest_description) && (
+                    <span className="history-item__guest">
+                      {t.tooltip_guest}: {[b.guest_first_name, b.guest_last_name].filter(Boolean).join(" ")}
+                      {b.guest_description ? ` — ${b.guest_description}` : ""}
+                    </span>
+                  )}
                   {(b.user_id === user.id || isAdmin) && (
                     <button type="button" className="btn btn--small btn--danger" onClick={() => handleCancel(b.id)}>
                       {t.room_cancel_booking}
@@ -819,6 +888,12 @@ export const RoomPage = () => {
                       <span className="history-item__company">
                         <span className="history-item__company-dot" style={{ background: b.company_color || "#9ca3af" }} />
                         {b.company_name}
+                      </span>
+                    )}
+                    {(b.guest_first_name || b.guest_last_name || b.guest_description) && (
+                      <span className="history-item__guest">
+                        {t.tooltip_guest}: {[b.guest_first_name, b.guest_last_name].filter(Boolean).join(" ")}
+                        {b.guest_description ? ` — ${b.guest_description}` : ""}
                       </span>
                     )}
                     <span className="history-item__status">{b.status}</span>

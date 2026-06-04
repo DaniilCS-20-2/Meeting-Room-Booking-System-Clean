@@ -104,9 +104,16 @@ class RoomService {
   }
 
   // Переключаем временное отключение комнаты (вызывается админом).
-  static async toggleDisabled(id, isDisabled) {
+  static async toggleDisabled(id, isDisabled, reason = "") {
+    if (typeof isDisabled !== "boolean") {
+      throw new HttpError(400, "isDisabled must be boolean.");
+    }
+    const cleanReason = String(reason || "").trim();
+    if (isDisabled && !cleanReason) {
+      throw new HttpError(400, "Reason is required when disabling a room.");
+    }
     // Переключаем флаг через репозиторий.
-    const room = await RoomRepository.toggleDisabled(id, isDisabled);
+    const room = await RoomRepository.toggleDisabled(id, isDisabled, { reason: cleanReason });
     // Если комната не найдена — возвращаем 404.
     if (!room) throw new HttpError(404, "Room not found.");
     // Возвращаем обновлённую комнату.

@@ -3,6 +3,7 @@ const UserRepository = require("../models/userRepository");
 const WhitelistRepository = require("../models/whitelistRepository");
 const CompanyRepository = require("../models/companyRepository");
 const BookingRepository = require("../models/bookingRepository");
+const { notifyBookingCancelled } = require("../utils/bookingNotifications");
 // Импортируем типизированную HTTP-ошибку.
 const HttpError = require("../utils/httpError");
 
@@ -143,8 +144,11 @@ const uploadUserAvatar = async (req, res, next) => {
 // Жёстко удаляем одно бронирование из истории (админ).
 const deleteBooking = async (req, res, next) => {
   try {
+    const booking = await BookingRepository.findById(req.params.id);
+    if (!booking) throw new HttpError(404, "Booking not found.");
     const ok = await BookingRepository.hardDelete(req.params.id);
     if (!ok) throw new HttpError(404, "Booking not found.");
+    notifyBookingCancelled(booking);
     res.json({ success: true, data: { deleted: true } });
   } catch (err) {
     next(err);

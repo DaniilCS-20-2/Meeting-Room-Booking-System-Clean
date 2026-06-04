@@ -10,7 +10,7 @@ class RoomRepository {
     // Формируем SELECT-запрос со всеми полями комнаты.
     const { rows } = await pool.query(
       `SELECT id, name, location, capacity, description, equipment, photo_url, photos, color,
-              min_booking_minutes, max_booking_minutes, status, is_disabled,
+              min_booking_minutes, max_booking_minutes, status, is_disabled, disabled_reason,
               created_at, updated_at
        FROM rooms ${where}
        ORDER BY name ASC`
@@ -24,7 +24,7 @@ class RoomRepository {
     // Формируем SELECT-запрос по первичному ключу.
     const { rows } = await pool.query(
       `SELECT id, name, location, capacity, description, equipment, photo_url, photos, color,
-              min_booking_minutes, max_booking_minutes, status, is_disabled,
+              min_booking_minutes, max_booking_minutes, status, is_disabled, disabled_reason,
               created_at, updated_at
        FROM rooms WHERE id = $1`,
       [id]
@@ -130,14 +130,14 @@ class RoomRepository {
     return rows[0] || null;
   }
 
-  static async toggleDisabled(id, isDisabled) {
+  static async toggleDisabled(id, isDisabled, payload = {}) {
     // Если комната отключается, меняем статус на «vedlikehald» (обслуживание).
     const status = isDisabled ? "vedlikehald" : "ledig";
     // Обновляем флаг is_disabled и статус комнаты.
     const { rows } = await pool.query(
-      `UPDATE rooms SET is_disabled = $2, status = $3, updated_at = NOW()
+      `UPDATE rooms SET is_disabled = $2, status = $3, disabled_reason = $4, updated_at = NOW()
        WHERE id = $1 RETURNING *`,
-      [id, isDisabled, status]
+      [id, isDisabled, status, isDisabled ? (payload.reason || null) : null]
     );
     // Возвращаем обновлённую комнату или null.
     return rows[0] || null;

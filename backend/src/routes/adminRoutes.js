@@ -38,6 +38,9 @@ router.delete("/users/:id", adminController.deleteUser);
 router.get("/companies", companyController.getAll);
 router.post("/companies", validateBody(companyCreateSchema), companyController.create);
 router.put("/companies/:id", validateBody(companyUpdateSchema), companyController.update);
+router.post("/companies/:id/logo",
+  ...processImage({ fieldName: "logo", prefix: "company", maxSide: 320, quality: 90, preferPng: true }),
+  companyController.uploadLogo);
 router.delete("/companies/:id", companyController.remove);
 
 // Управление историей бронирований — только админ.
