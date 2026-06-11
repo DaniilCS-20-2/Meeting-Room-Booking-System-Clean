@@ -731,12 +731,12 @@ body.tv-display-root,
 #root.tv-display-root {
   background: transparent !important;
   min-height: 100dvh;
+  height: auto;
 }
 #root.tv-display-root {
-  display: flex;
-  flex-direction: column;
+  display: block;
+  width: 100%;
 }
-/* Førehandsvisning: grå ruter viser gjennomsiktige område i nettlesaren. */
 html.tv-display-root--preview,
 body.tv-display-root--preview,
 #root.tv-display-root--preview {
@@ -749,165 +749,108 @@ body.tv-display-root--preview,
   background-size: 24px 24px !important;
   background-position: 0 0, 0 12px, 12px -12px, -12px 0 !important;
 }
+
 .tv-display {
-  flex: 1;
   width: 100%;
-  min-height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: clamp(28px, 5vh, 56px) clamp(18px, 3vw, 40px) clamp(16px, 2vh, 24px);
+  box-sizing: border-box;
+  padding: 32px 40px 24px;
   background: transparent;
   color: #111827;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  --tv-fs-heading: clamp(32px, 4.05vw, 52px);
-  --tv-fs-time: clamp(29px, 3.24vw, 45px);
-  --tv-fs-room: clamp(29px, 3.24vw, 45px);
-  --tv-fs-guest: clamp(26px, 2.9vw, 40px);
-  --tv-fs-note: clamp(22px, 2.4vw, 32px);
-  --tv-fs-host: clamp(26px, 2.9vw, 40px);
-  --tv-logo-w: min(260px, 21.6vw);
-  --tv-logo-h: min(180px, 14.4vw);
-  --tv-brand-w: minmax(160px, 260px);
-  --tv-row-gap-x: 48px;
-  --tv-row-gap-y: 32px;
-  --tv-row-pad: 14px;
-  --tv-list-gap: 8px;
-  --tv-head-mb: 43px;
-  --tv-info-gap: 8px;
-  --tv-list-cols: 1;
-}
-.tv-display--fit-1 {
-  --tv-fs-heading: clamp(28px, 3.4vw, 44px);
-  --tv-fs-time: clamp(24px, 2.7vw, 38px);
-  --tv-fs-room: clamp(24px, 2.7vw, 38px);
-  --tv-fs-guest: clamp(22px, 2.4vw, 34px);
-  --tv-fs-note: clamp(19px, 2vw, 28px);
-  --tv-fs-host: clamp(22px, 2.4vw, 34px);
-  --tv-logo-h: min(140px, 11.5vw);
-  --tv-row-pad: 10px;
-  --tv-head-mb: 28px;
-  --tv-list-gap: 6px;
-}
-.tv-display--fit-2 {
-  --tv-fs-heading: clamp(24px, 2.8vw, 36px);
-  --tv-fs-time: clamp(20px, 2.2vw, 32px);
-  --tv-fs-room: clamp(20px, 2.2vw, 32px);
-  --tv-fs-guest: clamp(18px, 2vw, 28px);
-  --tv-fs-note: clamp(16px, 1.7vw, 24px);
-  --tv-fs-host: clamp(18px, 2vw, 28px);
-  --tv-logo-w: min(200px, 17vw);
-  --tv-logo-h: min(110px, 9vw);
-  --tv-brand-w: minmax(120px, 180px);
+  --tv-fs-heading: clamp(32px, 4vw, 52px);
+  --tv-fs-time: clamp(28px, 3.2vw, 44px);
+  --tv-fs-room: clamp(28px, 3.2vw, 44px);
+  --tv-fs-guest: clamp(24px, 2.8vw, 38px);
+  --tv-fs-note: clamp(20px, 2.2vw, 30px);
+  --tv-fs-host: clamp(24px, 2.8vw, 38px);
+  --tv-logo-w: min(220px, 18vw);
+  --tv-logo-h: min(150px, 12vw);
+  --tv-brand-w: minmax(150px, 220px);
   --tv-row-gap-x: 28px;
-  --tv-row-gap-y: 20px;
-  --tv-row-pad: 8px;
-  --tv-head-mb: 20px;
-  --tv-list-gap: 4px;
-  --tv-info-gap: 5px;
-}
-.tv-display--fit-3 {
-  --tv-fs-heading: clamp(28px, 3.4vw, 44px);
-  --tv-fs-time: clamp(24px, 2.8vw, 38px);
-  --tv-fs-room: clamp(24px, 2.8vw, 38px);
-  --tv-fs-guest: clamp(22px, 2.5vw, 34px);
-  --tv-fs-note: clamp(19px, 2.1vw, 28px);
-  --tv-fs-host: clamp(22px, 2.5vw, 34px);
-  --tv-logo-w: min(190px, 16vw);
-  --tv-logo-h: min(130px, 10.5vw);
-  --tv-brand-w: minmax(140px, 200px);
-  --tv-row-gap-x: 24px;
   --tv-row-gap-y: 16px;
   --tv-row-pad: 12px;
-  --tv-head-mb: 32px;
-  --tv-list-gap: 18px;
-  --tv-info-gap: 7px;
-  --tv-list-cols: 2;
+  --tv-col-gap: clamp(48px, 7vw, 88px);
+  --tv-col-w: min(540px, 44vw);
+  --tv-list-gap: 20px;
+  --tv-info-gap: 8px;
+  --tv-head-gap: 36px;
 }
-.tv-display--fit-3-soft {
-  --tv-fs-heading: clamp(36px, 4.4vw, 56px);
-  --tv-fs-time: clamp(30px, 3.5vw, 48px);
-  --tv-fs-room: clamp(30px, 3.5vw, 48px);
-  --tv-fs-guest: clamp(26px, 3vw, 42px);
+
+.tv-display[data-size="xlarge"] {
+  --tv-fs-heading: clamp(36px, 4.6vw, 58px);
+  --tv-fs-time: clamp(32px, 3.8vw, 50px);
+  --tv-fs-room: clamp(32px, 3.8vw, 50px);
+  --tv-fs-guest: clamp(28px, 3.2vw, 44px);
   --tv-fs-note: clamp(22px, 2.5vw, 34px);
-  --tv-fs-host: clamp(26px, 3vw, 42px);
-  --tv-logo-w: min(240px, 20vw);
-  --tv-logo-h: min(165px, 13.5vw);
-  --tv-brand-w: minmax(170px, 250px);
-  --tv-row-gap-x: 32px;
-  --tv-row-gap-y: 20px;
-  --tv-row-pad: 14px;
-  --tv-head-mb: 40px;
+  --tv-fs-host: clamp(28px, 3.2vw, 44px);
+  --tv-logo-w: min(260px, 21vw);
+  --tv-logo-h: min(175px, 14vw);
+  --tv-brand-w: minmax(170px, 260px);
+  --tv-col-w: min(720px, 78vw);
+  --tv-list-gap: 24px;
+  --tv-head-gap: 40px;
+}
+.tv-display[data-size="large"] {
+  --tv-fs-heading: clamp(34px, 4.2vw, 54px);
+  --tv-fs-time: clamp(30px, 3.5vw, 46px);
+  --tv-fs-room: clamp(30px, 3.5vw, 46px);
+  --tv-fs-guest: clamp(26px, 3vw, 40px);
+  --tv-fs-note: clamp(21px, 2.3vw, 32px);
+  --tv-fs-host: clamp(26px, 3vw, 40px);
+  --tv-logo-w: min(240px, 19vw);
+  --tv-logo-h: min(160px, 13vw);
+  --tv-brand-w: minmax(160px, 240px);
+  --tv-col-w: min(560px, 46vw);
   --tv-list-gap: 22px;
-  --tv-info-gap: 9px;
+  --tv-head-gap: 38px;
 }
-.tv-display--fit-3 .tv-display__logo { max-height: 150px; }
-.tv-display--fit-3-soft .tv-display__logo { max-height: 185px; }
-.tv-display--fit-4 .tv-display__logo { max-height: 72px; }
-.tv-display--fit-4 {
-  --tv-fs-heading: clamp(20px, 2.2vw, 28px);
-  --tv-fs-time: clamp(17px, 1.7vw, 24px);
-  --tv-fs-room: clamp(17px, 1.7vw, 24px);
-  --tv-fs-guest: clamp(15px, 1.5vw, 21px);
-  --tv-fs-note: clamp(14px, 1.35vw, 19px);
-  --tv-fs-host: clamp(15px, 1.5vw, 21px);
-  --tv-logo-w: min(100px, 10vw);
-  --tv-logo-h: min(64px, 6vw);
-  --tv-brand-w: minmax(60px, 88px);
-  --tv-row-gap-x: 10px;
-  --tv-row-gap-y: 8px;
-  --tv-row-pad: 4px;
-  --tv-head-mb: 12px;
-  --tv-list-gap: 8px 14px;
-  --tv-info-gap: 3px;
-  --tv-list-cols: 2;
+.tv-display[data-size="medium"] {
+  --tv-fs-heading: clamp(28px, 3.2vw, 42px);
+  --tv-fs-time: clamp(24px, 2.6vw, 36px);
+  --tv-fs-room: clamp(24px, 2.6vw, 36px);
+  --tv-fs-guest: clamp(21px, 2.3vw, 32px);
+  --tv-fs-note: clamp(18px, 2vw, 26px);
+  --tv-fs-host: clamp(21px, 2.3vw, 32px);
+  --tv-logo-w: min(170px, 14vw);
+  --tv-logo-h: min(115px, 9vw);
+  --tv-brand-w: minmax(120px, 170px);
+  --tv-col-w: min(480px, 40vw);
+  --tv-col-gap: clamp(36px, 5vw, 64px);
+  --tv-list-gap: 16px;
+  --tv-head-gap: 32px;
 }
+.tv-display[data-size="small"] {
+  --tv-fs-heading: clamp(22px, 2.4vw, 32px);
+  --tv-fs-time: clamp(19px, 2vw, 28px);
+  --tv-fs-room: clamp(19px, 2vw, 28px);
+  --tv-fs-guest: clamp(17px, 1.8vw, 25px);
+  --tv-fs-note: clamp(15px, 1.5vw, 22px);
+  --tv-fs-host: clamp(17px, 1.8vw, 25px);
+  --tv-logo-w: min(120px, 10vw);
+  --tv-logo-h: min(80px, 6.5vw);
+  --tv-brand-w: minmax(80px, 120px);
+  --tv-row-gap-x: 14px;
+  --tv-row-pad: 6px;
+  --tv-col-w: min(380px, 30vw);
+  --tv-col-gap: clamp(24px, 3.5vw, 48px);
+  --tv-list-gap: 12px;
+  --tv-head-gap: 24px;
+}
+.tv-display[data-cols="3"] {
+  --tv-col-w: min(400px, 28vw);
+  --tv-col-gap: clamp(28px, 4vw, 52px);
+}
+
 .tv-display p,
 .tv-display span {
   color: #111827;
   text-decoration: none;
 }
 .tv-display__content {
-  width: min(1150px, 100%);
-  margin: 0 auto;
-}
-.tv-display--fit-3 .tv-display__content,
-.tv-display--fit-4 .tv-display__content {
   width: 100%;
   max-width: 100%;
-  padding-inline: clamp(12px, 2vw, 28px);
-  box-sizing: border-box;
-}
-/* Две колонки расходятся от центра экрана, а не от левого края. */
-.tv-display__columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-  column-gap: clamp(28px, 4.5vw, 56px);
-  width: 100%;
-}
-.tv-display__col {
-  width: 100%;
-  max-width: min(580px, 49vw);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--tv-list-gap);
-}
-.tv-display__col:first-child {
-  justify-self: end;
-}
-.tv-display__col:last-child {
-  justify-self: start;
-}
-.tv-display--fit-3-soft .tv-display__col {
-  max-width: min(640px, 50vw);
+  margin: 0 auto;
 }
 .tv-display__preview-banner {
   position: fixed;
@@ -927,7 +870,7 @@ body.tv-display-root--preview,
   text-align: center;
 }
 .tv-display__head {
-  margin: 0 0 var(--tv-head-mb);
+  margin: 0 0 var(--tv-head-gap);
   padding: 0;
   text-align: center;
 }
@@ -953,14 +896,24 @@ body.tv-display-root--preview,
 .tv-display__date::before {
   content: "– ";
 }
-.tv-display__list {
-  list-style: none;
-  margin: 0 auto;
-  padding: 0;
+/* Колонки сходятся от центра экрана */
+.tv-display__grid {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--tv-col-gap);
   width: 100%;
-  max-width: min(960px, 94%);
-  display: grid;
-  grid-template-columns: repeat(var(--tv-list-cols), minmax(0, 1fr));
+}
+.tv-display__col {
+  flex: 0 1 var(--tv-col-w);
+  width: var(--tv-col-w);
+  min-width: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
   gap: var(--tv-list-gap);
 }
 .tv-display__row {
@@ -976,17 +929,16 @@ body.tv-display-root--preview,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  justify-self: center;
   min-width: 0;
 }
 .tv-display__logo {
   width: var(--tv-logo-w);
   height: var(--tv-logo-h);
-  max-height: 200px;
+  max-height: 190px;
   object-fit: contain;
   object-position: center center;
 }
+.tv-display[data-size="small"] .tv-display__logo { max-height: 88px; }
 .tv-display__logo-spacer {
   width: var(--tv-logo-w);
   height: 1px;
@@ -1044,7 +996,7 @@ body.tv-display-root--preview,
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
 }
 .tv-display__guest-block + .tv-display__host {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 .tv-display__empty {
   font-size: clamp(25px, 2.88vw, 38px);
@@ -1056,25 +1008,12 @@ body.tv-display-root--preview,
 }
 
 @media (max-width: 900px) {
-  .tv-display { padding: 29px 22px; }
+  .tv-display { padding: 24px 20px; }
+  .tv-display__grid { flex-direction: column; align-items: center; }
+  .tv-display__col { width: 100%; max-width: min(560px, 94vw); flex-basis: auto; }
   .tv-display__row {
     grid-template-columns: minmax(100px, 150px) minmax(0, 1fr);
-    gap: 16px 24px;
-    padding: 12px 0;
-  }
-  .tv-display__logo,
-  .tv-display__logo-spacer {
-    width: min(150px, 32vw);
-    height: min(108px, 22vw);
-  }
-  .tv-display__time {
-    font-size: clamp(22px, 4.5vw, 32px);
-  }
-  .tv-display__line {
-    font-size: clamp(20px, 4vw, 29px);
-  }
-  .tv-display__heading {
-    font-size: clamp(25px, 5.4vw, 36px);
+    gap: 12px 20px;
   }
 }
 

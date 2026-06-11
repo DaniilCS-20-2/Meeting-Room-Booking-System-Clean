@@ -7,7 +7,6 @@ const DATA_POLL_MS = 15_000;
 const CLOCK_TICK_MS = 15_000;
 const PAGE_RELOAD_MS = 10 * 60_000;
 
-/** Оценка «занятости» экрана одной записью (лого, гости, хост = выше). */
 const itemVisualWeight = (item) => {
   let w = 1;
   if (item.companyLogoUrl) w += 0.35;
@@ -20,24 +19,43 @@ const itemVisualWeight = (item) => {
   return w;
 };
 
-/** 0 = крупно, 1–2 = компактнее, 3–4 = два столбца. Берём max(по числу, по нагрузке). */
-const pickFitTier = (items) => {
+/** columns: 1 | 2 | 3, size: xlarge | large | medium | small */
+const computeLayout = (items) => {
   const count = items.length;
-  if (count === 0) return 0;
+  if (count === 0) return { columns: 1, size: "large" };
 
   const load = items.reduce((sum, item) => sum + itemVisualWeight(item), 0);
+  const rowsPerCol = (cols) => Math.ceil(count / cols);
 
-  const byCount =
-    count >= 9 ? 4 :
-    count >= 4 ? 3 : 0;
+  let columns = 1;
+  if (count >= 10 || load >= 12) columns = 3;
+  else if (count >= 4 || load >= 5.5) columns = 2;
 
-  const byLoad =
-    load >= 11.5 ? 4 :
-    load >= 9 ? 3 :
-    load >= 7 ? 2 :
-    load >= 5.5 ? 1 : 0;
+  const rows = rowsPerCol(columns);
+  let size = "large";
 
-  return Math.max(byCount, byLoad);
+  if (columns === 1) {
+    size = count <= 2 ? "xlarge" : count <= 3 ? "large" : "medium";
+  } else if (columns === 2) {
+    if (count <= 6 && load < 9) size = "large";
+    else if (rows <= 4 && load < 11) size = "medium";
+    else size = "small";
+  } else {
+    if (rows <= 4 && load < 14) size = "medium";
+    else size = "small";
+  }
+
+  return { columns, size };
+};
+
+const splitColumns = (items, columnCount) => {
+  if (columnCount <= 1) return [items];
+  const perCol = Math.ceil(items.length / columnCount);
+  const cols = [];
+  for (let i = 0; i < items.length; i += perCol) {
+    cols.push(items.slice(i, i + perCol));
+  }
+  return cols;
 };
 
 const fmtClock = (iso) =>
@@ -102,14 +120,11 @@ export const TvDisplayPage = () => {
     [items, now]
   );
 
-  const fitTier = useMemo(() => pickFitTier(visibleItems), [visibleItems]);
-  const useTwoColumns = fitTier >= 3;
-
-  const columnGroups = useMemo(() => {
-    if (!useTwoColumns || visibleItems.length === 0) return null;
-    const mid = Math.ceil(visibleItems.length / 2);
-    return [visibleItems.slice(0, mid), visibleItems.slice(mid)];
-  }, [visibleItems, useTwoColumns]);
+  const layout = useMemo(() => computeLayout(visibleItems), [visibleItems]);
+  const columnGroups = useMemo(
+    () => splitColumns(visibleItems, layout.columns),
+    [visibleItems, layout.columns]
+  );
 
   const dayLabel = useMemo(
     () => bounds.start.toLocaleDateString("nn-NO", {
@@ -182,13 +197,12 @@ export const TvDisplayPage = () => {
     return () => clearInterval(reloadTimer);
   }, []);
 
-  const fitClass = [
-    fitTier > 0 ? `tv-display--fit-${fitTier}` : "",
-    fitTier === 3 && visibleItems.length <= 8 ? "tv-display--fit-3-soft" : "",
-  ].filter(Boolean).join(" ");
-
   return (
-    <div className={`tv-display${fitClass ? ` ${fitClass}` : ""}`}>
+    <div
+      className="tv-display"
+      data-size={layout.size}
+      data-cols={layout.columns}
+    >
       {previewTransparent && (
         <p className="tv-display__preview-banner">{t.display_preview_hint}</p>
       )}
@@ -209,8 +223,8 @@ export const TvDisplayPage = () => {
           <p className="tv-display__empty">{t.display_empty}</p>
         )}
 
-        {useTwoColumns && columnGroups ? (
-          <div className="tv-display__columns">
+        {!loading && visibleItems.length > 0 && (
+          <div className="tv-display__grid">
             {columnGroups.map((col, idx) => (
               <ul key={idx} className="tv-display__col">
                 {col.map((item) => (
@@ -219,12 +233,6 @@ export const TvDisplayPage = () => {
               </ul>
             ))}
           </div>
-        ) : (
-          <ul className="tv-display__list">
-            {visibleItems.map((item) => (
-              <DisplayRow key={item.id} item={item} />
-            ))}
-          </ul>
         )}
       </div>
     </div>
