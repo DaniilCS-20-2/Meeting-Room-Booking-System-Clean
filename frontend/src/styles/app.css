@@ -28,25 +28,40 @@ body {
   }
 }
 
-/* iOS safe-area for PWA (notch / home indicator) */
+/* iOS safe-area (notch / home indicator) */
 @supports (padding: max(0px)) {
   .top-nav {
-    padding-top: max(10px, env(safe-area-inset-top));
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
   }
   .page { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
-  .home-page.page { padding-top: max(24px, env(safe-area-inset-top)); }
 }
 
-/* Extra top padding when running as installed PWA on iOS */
-@media all and (display-mode: standalone) {
-  .top-nav { padding-top: max(44px, env(safe-area-inset-top)) !important; }
-  .home-page.page { padding-top: max(54px, calc(env(safe-area-inset-top) + 14px)) !important; }
+/* --- Шапка: белая зона под статус-бар на телефоне --- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
 }
-@media all and (display-mode: fullscreen) {
-  .top-nav { padding-top: max(44px, env(safe-area-inset-top)) !important; }
-  .home-page.page { padding-top: max(54px, calc(env(safe-area-inset-top) + 14px)) !important; }
+.app-header .top-nav {
+  border-bottom: none;
+}
+.app-header__inset {
+  display: none;
+  width: 100%;
+  background: #fff;
+  flex-shrink: 0;
+}
+@media (hover: none) and (pointer: coarse) {
+  .app-header__inset {
+    display: block;
+    height: env(safe-area-inset-top, 0px);
+  }
+  html.ios .app-header__inset {
+    height: max(env(safe-area-inset-top, 0px), 44px);
+  }
 }
 
 /* --- Контейнер страницы --- */
@@ -1020,19 +1035,7 @@ body.tv-display-root--preview,
    Мобильная адаптация
    ============================================================ */
 @media (max-width: 768px) {
-  /* Safe-area / status bar: белый фон над шапкой (не серый body). */
-  html { background-color: #fff; }
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: env(safe-area-inset-top, 0px);
-    background: #fff;
-    z-index: 1000;
-    pointer-events: none;
-  }
+  html.ios { background-color: #fff; }
 
   .home-grid { grid-template-columns: 1fr; margin-top: 14px; }
   .home-card__media,
