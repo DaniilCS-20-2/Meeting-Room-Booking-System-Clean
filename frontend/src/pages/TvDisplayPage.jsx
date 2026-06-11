@@ -61,6 +61,29 @@ const splitColumns = (items, columnCount) => {
 const fmtClock = (iso) =>
   new Date(iso).toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
 
+/** Имя/фамилия и короткие фразы — без переноса посередине слова. */
+const PersonText = ({ text, className, as: Tag = "span" }) => {
+  if (!text) return null;
+  const parts = String(text).split(",").map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 1) {
+    return (
+      <Tag className={className}>
+        {parts.map((part, i) => (
+          <React.Fragment key={i}>
+            <span className="tv-display__person">{part}</span>
+            {i < parts.length - 1 ? ", " : null}
+          </React.Fragment>
+        ))}
+      </Tag>
+    );
+  }
+  return (
+    <Tag className={className ? `${className} tv-display__person` : "tv-display__person"}>
+      {parts[0] || text}
+    </Tag>
+  );
+};
+
 const DisplayRow = ({ item }) => (
   <li className="tv-display__row">
     <div className="tv-display__brand">
@@ -78,19 +101,19 @@ const DisplayRow = ({ item }) => (
       <span className="tv-display__time">
         {fmtClock(item.startTime)} – {fmtClock(item.endTime)}
       </span>
-      <p className="tv-display__room">{item.roomName}</p>
+      <PersonText text={item.roomName} className="tv-display__room" as="p" />
       {(item.guestNames || item.guestNote) && (
         <div className="tv-display__guest-block">
           {item.guestNames && (
-            <p className="tv-display__guests">{item.guestNames}</p>
+            <PersonText text={item.guestNames} className="tv-display__guests" as="p" />
           )}
           {item.guestNote && (
-            <p className="tv-display__guest-note">{item.guestNote}</p>
+            <PersonText text={item.guestNote} className="tv-display__guest-note" as="p" />
           )}
         </div>
       )}
       {item.hostName && (
-        <p className="tv-display__host">{item.hostName}</p>
+        <PersonText text={item.hostName} className="tv-display__host" as="p" />
       )}
     </div>
   </li>

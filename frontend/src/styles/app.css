@@ -981,6 +981,9 @@ body.tv-display-root--preview,
   gap: 4px;
   max-width: 100%;
 }
+.tv-display__person {
+  white-space: nowrap;
+}
 .tv-display__guests {
   margin: 0;
   font-size: var(--tv-fs-guest);
