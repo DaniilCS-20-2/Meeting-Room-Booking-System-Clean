@@ -1412,41 +1412,69 @@ body.tv-display-root--preview,
 .overview-calendar-page.page {
   max-width: none;
   width: 100%;
-  padding: 4px 10px 10px;
+  padding: 0 6px 4px;
   min-height: 100dvh;
+  height: 100dvh;
   display: flex;
+  overflow: hidden;
 }
 .overview-cal--fullscreen {
+  position: relative;
   margin: 0;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
 }
-.overview-cal--fullscreen .overview-cal__toolbar {
-  margin-bottom: 6px;
-  gap: 0;
+.overview-cal--fullscreen .overview-cal__toolbar--overlay {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  z-index: 20;
+  margin: 0;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  pointer-events: none;
+}
+.overview-cal--fullscreen .overview-cal__toolbar--overlay * {
+  pointer-events: auto;
 }
 .overview-cal--fullscreen .overview-cal__meta {
   min-height: 0;
+  width: 100%;
 }
 .overview-cal--fullscreen .overview-cal__week-label {
-  font-size: 14px;
-  min-width: 9.5em;
+  font-size: 13px;
+  min-width: 8.5em;
+}
+.overview-cal--fullscreen .overview-cal__today-btn {
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.overview-cal--fullscreen .overview-cal__week-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
 }
 .overview-cal--fullscreen .calendar-legend {
   margin: 0;
   padding: 0;
-  gap: 18px;
-  font-size: 15px;
+  gap: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #111827;
 }
 .overview-cal--fullscreen .calendar-legend__swatch,
 .overview-cal--fullscreen .calendar-legend__dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
 }
 .overview-cal--fullscreen .calendar-grid {
   flex: 1 1 auto;
@@ -1454,6 +1482,9 @@ body.tv-display-root--preview,
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
+  padding-top: 46px;
+  box-sizing: border-box;
 }
 .overview-cal--fullscreen .calendar-grid__body {
   flex: 1 1 auto;
