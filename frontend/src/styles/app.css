@@ -1085,16 +1085,17 @@ body.tv-display-root--preview,
   .calendar-grid__day-label { padding: 6px 2px; font-size: 10px; }
   .calendar-grid__hour { padding: 2px 4px; font-size: 10px; }
   .calendar-grid__cell { min-height: 36px; padding: 2px; }
-  .overview-cal__top {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .overview-cal__top .overview-cal__week-nav {
-    width: 100%;
+  .overview-cal__top,
+  .overview-cal__meta {
+    grid-template-columns: 1fr;
   }
   .overview-cal__week-nav {
-    flex: 1 1 auto;
-    min-width: 0;
+    justify-self: stretch;
+    width: 100%;
+    justify-content: center;
+  }
+  .overview-cal__fullscreen-btn {
+    justify-self: end;
   }
   .overview-cal__week-label {
     min-width: 0;
@@ -1275,33 +1276,34 @@ body.tv-display-root--preview,
   flex-direction: column;
   gap: 12px;
   margin-bottom: 12px;
+  width: 100%;
 }
 .overview-cal__top {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 .overview-cal__title {
   margin: 0;
-  flex: 1 1 auto;
   min-width: 0;
 }
 .overview-cal__meta {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   min-height: 38px;
+  width: 100%;
 }
 .overview-cal__meta .calendar-legend {
   margin: 0;
-  flex: 1 1 auto;
   min-width: 0;
 }
 .overview-cal__meta-spacer {
-  flex: 1 1 auto;
+  display: block;
+  min-width: 0;
 }
 .overview-cal__week-nav {
   display: inline-flex;
@@ -1351,7 +1353,7 @@ body.tv-display-root--preview,
   height: 38px;
   padding: 0 10px;
   line-height: 0;
-  flex-shrink: 0;
+  justify-self: end;
 }
 .overview-cal__fullscreen-btn svg {
   display: block;
