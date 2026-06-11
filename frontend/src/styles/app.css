@@ -874,26 +874,34 @@ body.tv-display-root--preview,
 }
 .tv-display--fit-3 .tv-display__content,
 .tv-display--fit-4 .tv-display__content {
-  width: min(1320px, 98%);
-}
-.tv-display__columns {
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  gap: clamp(16px, 2.5vw, 28px);
   width: 100%;
-  margin: 0 auto;
+  max-width: 100%;
+  padding-inline: clamp(12px, 2vw, 28px);
+  box-sizing: border-box;
+}
+/* Две колонки расходятся от центра экрана, а не от левого края. */
+.tv-display__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  column-gap: clamp(28px, 4.5vw, 56px);
+  width: 100%;
 }
 .tv-display__col {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 640px;
+  width: 100%;
+  max-width: min(520px, 46vw);
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--tv-list-gap);
+}
+.tv-display__col:first-child {
+  justify-self: end;
+}
+.tv-display__col:last-child {
+  justify-self: start;
 }
 .tv-display__preview-banner {
   position: fixed;
