@@ -14,7 +14,6 @@ import { AdminRoomPage } from "./pages/AdminRoomPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { OverviewCalendarPage } from "./pages/OverviewCalendarPage";
 import { TvDisplayPage } from "./pages/TvDisplayPage";
-import { AppHeader } from "./components/AppHeader";
 // Импортируем объект переводов (Nynorsk).
 import { t } from "./i18n/labels";
 
@@ -78,7 +77,6 @@ const AppLayout = () => {
     <>
       {/* Навигация скрыта на auth и fullscreen-календаре. */}
       {!isAuth && !isCalendar && !isDisplay && (
-        <AppHeader>
         <nav className="top-nav">
           <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
           <div className="top-nav__right">
@@ -107,7 +105,6 @@ const AppLayout = () => {
             <AvatarMenu />
           </div>
         </nav>
-        </AppHeader>
       )}
 
       {/* Определяем маршруты приложения. */}

@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api";
 import { t } from "../i18n/labels";
-import { AppHeader } from "../components/AppHeader";
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -126,11 +125,9 @@ export const AuthPage = () => {
   if (verifyStep) {
     return (
       <>
-        <AppHeader>
-          <nav className="top-nav">
-            <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
-          </nav>
-        </AppHeader>
+        <nav className="top-nav">
+          <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
+        </nav>
         <section className="page page--narrow">
           <h1 className="page__title">{t.auth_verify_title}</h1>
           <p className="helper-text">{t.auth_verify_hint}</p>
@@ -152,11 +149,9 @@ export const AuthPage = () => {
   if (forgotStep) {
     return (
       <>
-        <AppHeader>
-          <nav className="top-nav">
-            <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
-          </nav>
-        </AppHeader>
+        <nav className="top-nav">
+          <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
+        </nav>
         <section className="page page--narrow">
           <h1 className="page__title">{t.auth_forgot_title}</h1>
           <p className="helper-text">{t.auth_forgot_hint}</p>
@@ -235,11 +230,9 @@ export const AuthPage = () => {
 
   return (
     <>
-      <AppHeader>
-        <nav className="top-nav">
-          <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
-        </nav>
-      </AppHeader>
+      <nav className="top-nav">
+        <Link className="home-btn home-btn--ghost" to="/">{t.nav_home}</Link>
+      </nav>
       <section className="page page--narrow">
         <h1 className="page__title">{t.auth_title}</h1>
 

@@ -7,10 +7,6 @@ import App from "./App";
 // Импортируем основной CSS-файл с читаемыми стилями интерфейса.
 import "./styles/app.css";
 
-if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  document.documentElement.classList.add("ios");
-}
-
 // Находим корневой DOM-элемент приложения.
 const rootElement = document.getElementById("root");
 // Создаём React root и монтируем App.
