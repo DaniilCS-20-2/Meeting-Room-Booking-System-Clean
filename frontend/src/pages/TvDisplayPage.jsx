@@ -88,11 +88,13 @@ const DisplayRow = ({ item }) => (
   <li className="tv-display__row">
     <div className="tv-display__brand">
       {item.companyLogoUrl ? (
-        <img
-          src={resolveUploadUrl(item.companyLogoUrl)}
-          alt={item.companyName || ""}
-          className="tv-display__logo"
-        />
+        <div className="tv-display__logo-frame">
+          <img
+            src={resolveUploadUrl(item.companyLogoUrl)}
+            alt={item.companyName || ""}
+            className="tv-display__logo"
+          />
+        </div>
       ) : (
         <span className="tv-display__logo-spacer" aria-hidden="true" />
       )}
