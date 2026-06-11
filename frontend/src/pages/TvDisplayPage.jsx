@@ -22,24 +22,26 @@ const itemVisualWeight = (item) => {
 /** columns: 1 | 2 | 3, size: xlarge | large | medium | small */
 const computeLayout = (items) => {
   const count = items.length;
-  if (count === 0) return { columns: 1, size: "large" };
+  if (count === 0) return { columns: 1, size: "medium" };
 
   const load = items.reduce((sum, item) => sum + itemVisualWeight(item), 0);
   const rowsPerCol = (cols) => Math.ceil(count / cols);
 
   let columns = 1;
-  if (count >= 10 || load >= 12) columns = 3;
-  else if (count >= 4 || load >= 5.5) columns = 2;
+  if (count >= 10) columns = 3;
+  else if (count >= 4) columns = 2;
 
   const rows = rowsPerCol(columns);
-  let size = "large";
+  let size = "medium";
 
   if (columns === 1) {
-    size = count <= 2 ? "xlarge" : count <= 3 ? "large" : "medium";
+    // 1–3 записи: один столбец, компактнее — не раздуваем по центру
+    size = load >= 7 ? "small" : count <= 1 ? "small" : "medium";
   } else if (columns === 2) {
-    if (count <= 6 && load < 9) size = "large";
-    else if (rows <= 4 && load < 11) size = "medium";
-    else size = "small";
+    // 4+ записей: два столбца — крупнее, заполняем ширину экрана
+    if (count <= 6 && load < 10) size = "xlarge";
+    else if (count <= 8 && load < 12) size = "large";
+    else size = "medium";
   } else {
     if (rows <= 4 && load < 14) size = "medium";
     else size = "small";
