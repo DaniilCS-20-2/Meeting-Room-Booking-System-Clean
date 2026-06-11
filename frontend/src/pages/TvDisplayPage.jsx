@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { apiFetch, resolveUploadUrl } from "../api";
 import { t } from "../i18n/labels";
@@ -6,6 +6,7 @@ import { t } from "../i18n/labels";
 const DATA_POLL_MS = 15_000;
 const CLOCK_TICK_MS = 15_000;
 const PAGE_RELOAD_MS = 10 * 60_000;
+const MAX_FIT_TIER = 4;
 
 const fmtClock = (iso) =>
   new Date(iso).toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
@@ -26,6 +27,8 @@ export const TvDisplayPage = () => {
   const [loading, setLoading] = useState(true);
   const [dayKey, setDayKey] = useState(() => new Date().toDateString());
   const [now, setNow] = useState(() => Date.now());
+  const [fitTier, setFitTier] = useState(0);
+  const contentRef = useRef(null);
 
   const bounds = useMemo(() => dayBounds(), [dayKey]);
 
@@ -105,13 +108,42 @@ export const TvDisplayPage = () => {
     return () => clearInterval(reloadTimer);
   }, []);
 
+  useLayoutEffect(() => {
+    if (loading) return;
+    setFitTier(0);
+  }, [visibleItems, loading, dayLabel]);
+
+  useLayoutEffect(() => {
+    if (loading) return undefined;
+    const node = contentRef.current;
+    if (!node) return undefined;
+
+    const overflows = () => {
+      const rect = node.getBoundingClientRect();
+      return rect.bottom > window.innerHeight - 6;
+    };
+
+    if (overflows() && fitTier < MAX_FIT_TIER) {
+      setFitTier((tier) => tier + 1);
+      return undefined;
+    }
+
+    const onResize = () => {
+      setFitTier(0);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [visibleItems, loading, fitTier, dayLabel]);
+
+  const fitClass = fitTier > 0 ? ` tv-display--fit-${fitTier}` : "";
+
   return (
-    <div className="tv-display">
+    <div className={`tv-display${fitClass}`}>
       {previewTransparent && (
         <p className="tv-display__preview-banner">{t.display_preview_hint}</p>
       )}
 
-      <div className="tv-display__content">
+      <div className="tv-display__content" ref={contentRef}>
         <header className="tv-display__head">
           <p className="tv-display__heading">
             <span className="tv-display__title">{t.display_title}</span>

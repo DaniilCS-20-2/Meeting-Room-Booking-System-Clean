@@ -756,12 +756,95 @@ body.tv-display-root--preview,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 43px 50px;
+  justify-content: flex-start;
+  padding: clamp(20px, 3.5vh, 43px) clamp(22px, 4vw, 50px) clamp(16px, 2.5vh, 32px);
   background: transparent;
   color: #111827;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  --tv-fs-heading: clamp(32px, 4.05vw, 52px);
+  --tv-fs-time: clamp(29px, 3.24vw, 45px);
+  --tv-fs-room: clamp(29px, 3.24vw, 45px);
+  --tv-fs-guest: clamp(26px, 2.9vw, 40px);
+  --tv-fs-note: clamp(22px, 2.4vw, 32px);
+  --tv-fs-host: clamp(26px, 2.9vw, 40px);
+  --tv-logo-w: min(260px, 21.6vw);
+  --tv-logo-h: min(180px, 14.4vw);
+  --tv-brand-w: minmax(160px, 260px);
+  --tv-row-gap-x: 48px;
+  --tv-row-gap-y: 32px;
+  --tv-row-pad: 14px;
+  --tv-list-gap: 8px;
+  --tv-head-mb: 43px;
+  --tv-info-gap: 8px;
+  --tv-list-cols: 1;
+}
+.tv-display--fit-1 {
+  --tv-fs-heading: clamp(28px, 3.4vw, 44px);
+  --tv-fs-time: clamp(24px, 2.7vw, 38px);
+  --tv-fs-room: clamp(24px, 2.7vw, 38px);
+  --tv-fs-guest: clamp(22px, 2.4vw, 34px);
+  --tv-fs-note: clamp(19px, 2vw, 28px);
+  --tv-fs-host: clamp(22px, 2.4vw, 34px);
+  --tv-logo-h: min(140px, 11.5vw);
+  --tv-row-pad: 10px;
+  --tv-head-mb: 28px;
+  --tv-list-gap: 6px;
+}
+.tv-display--fit-2 {
+  --tv-fs-heading: clamp(24px, 2.8vw, 36px);
+  --tv-fs-time: clamp(20px, 2.2vw, 32px);
+  --tv-fs-room: clamp(20px, 2.2vw, 32px);
+  --tv-fs-guest: clamp(18px, 2vw, 28px);
+  --tv-fs-note: clamp(16px, 1.7vw, 24px);
+  --tv-fs-host: clamp(18px, 2vw, 28px);
+  --tv-logo-w: min(200px, 17vw);
+  --tv-logo-h: min(110px, 9vw);
+  --tv-brand-w: minmax(120px, 180px);
+  --tv-row-gap-x: 28px;
+  --tv-row-gap-y: 20px;
+  --tv-row-pad: 8px;
+  --tv-head-mb: 20px;
+  --tv-list-gap: 4px;
+  --tv-info-gap: 5px;
+}
+.tv-display--fit-3 {
+  --tv-fs-heading: clamp(22px, 2.5vw, 32px);
+  --tv-fs-time: clamp(19px, 2vw, 28px);
+  --tv-fs-room: clamp(19px, 2vw, 28px);
+  --tv-fs-guest: clamp(17px, 1.8vw, 25px);
+  --tv-fs-note: clamp(15px, 1.5vw, 22px);
+  --tv-fs-host: clamp(17px, 1.8vw, 25px);
+  --tv-logo-w: min(130px, 12vw);
+  --tv-logo-h: min(80px, 7vw);
+  --tv-brand-w: minmax(72px, 110px);
+  --tv-row-gap-x: 14px;
+  --tv-row-gap-y: 12px;
+  --tv-row-pad: 6px;
+  --tv-head-mb: 16px;
+  --tv-list-gap: 10px 20px;
+  --tv-info-gap: 4px;
+  --tv-list-cols: 2;
+}
+.tv-display--fit-3 .tv-display__logo { max-height: 96px; }
+.tv-display--fit-4 .tv-display__logo { max-height: 72px; }
+.tv-display--fit-4 {
+  --tv-fs-heading: clamp(20px, 2.2vw, 28px);
+  --tv-fs-time: clamp(17px, 1.7vw, 24px);
+  --tv-fs-room: clamp(17px, 1.7vw, 24px);
+  --tv-fs-guest: clamp(15px, 1.5vw, 21px);
+  --tv-fs-note: clamp(14px, 1.35vw, 19px);
+  --tv-fs-host: clamp(15px, 1.5vw, 21px);
+  --tv-logo-w: min(100px, 10vw);
+  --tv-logo-h: min(64px, 6vw);
+  --tv-brand-w: minmax(60px, 88px);
+  --tv-row-gap-x: 10px;
+  --tv-row-gap-y: 8px;
+  --tv-row-pad: 4px;
+  --tv-head-mb: 12px;
+  --tv-list-gap: 8px 14px;
+  --tv-info-gap: 3px;
+  --tv-list-cols: 2;
 }
 .tv-display p,
 .tv-display span {
@@ -770,6 +853,10 @@ body.tv-display-root--preview,
 }
 .tv-display__content {
   width: min(1150px, 100%);
+}
+.tv-display--fit-3 .tv-display__content,
+.tv-display--fit-4 .tv-display__content {
+  width: min(1400px, 100%);
 }
 .tv-display__preview-banner {
   position: fixed;
@@ -789,7 +876,7 @@ body.tv-display-root--preview,
   text-align: center;
 }
 .tv-display__head {
-  margin-bottom: 43px;
+  margin-bottom: var(--tv-head-mb);
   text-align: center;
 }
 .tv-display__heading {
@@ -799,7 +886,7 @@ body.tv-display-root--preview,
   align-items: baseline;
   justify-content: center;
   gap: 0.35em 0.55em;
-  font-size: clamp(32px, 4.05vw, 52px);
+  font-size: var(--tv-fs-heading);
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -818,16 +905,17 @@ body.tv-display-root--preview,
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(var(--tv-list-cols), minmax(0, 1fr));
+  gap: var(--tv-list-gap);
 }
 .tv-display__row {
   display: grid;
-  grid-template-columns: minmax(160px, 260px) minmax(0, 1fr);
-  gap: 32px 48px;
+  grid-template-columns: var(--tv-brand-w) minmax(0, 1fr);
+  gap: var(--tv-row-gap-y) var(--tv-row-gap-x);
   align-items: center;
-  padding: 14px 0;
+  padding: var(--tv-row-pad) 0;
+  min-width: 0;
 }
 .tv-display__brand {
   display: flex;
@@ -839,14 +927,14 @@ body.tv-display-root--preview,
   min-width: 0;
 }
 .tv-display__logo {
-  width: min(260px, 21.6vw);
-  height: min(180px, 14.4vw);
+  width: var(--tv-logo-w);
+  height: var(--tv-logo-h);
   max-height: 200px;
   object-fit: contain;
   object-position: center center;
 }
 .tv-display__logo-spacer {
-  width: min(260px, 21.6vw);
+  width: var(--tv-logo-w);
   height: 1px;
 }
 .tv-display__info {
@@ -854,10 +942,10 @@ body.tv-display-root--preview,
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--tv-info-gap);
 }
 .tv-display__time {
-  font-size: clamp(29px, 3.24vw, 45px);
+  font-size: var(--tv-fs-time);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
@@ -867,7 +955,7 @@ body.tv-display-root--preview,
 }
 .tv-display__room {
   margin: 0;
-  font-size: clamp(29px, 3.24vw, 45px);
+  font-size: var(--tv-fs-room);
   font-weight: 600;
   line-height: 1.3;
   color: #111827;
@@ -881,7 +969,7 @@ body.tv-display-root--preview,
 }
 .tv-display__guests {
   margin: 0;
-  font-size: clamp(26px, 2.9vw, 40px);
+  font-size: var(--tv-fs-guest);
   font-weight: 500;
   line-height: 1.35;
   color: #111827;
@@ -889,14 +977,14 @@ body.tv-display-root--preview,
 }
 .tv-display__guest-note {
   margin: 0;
-  font-size: clamp(22px, 2.4vw, 32px);
+  font-size: var(--tv-fs-note);
   font-weight: 500;
   line-height: 1.35;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
 }
 .tv-display__host {
   margin: 0;
-  font-size: clamp(26px, 2.9vw, 40px);
+  font-size: var(--tv-fs-host);
   font-weight: 600;
   line-height: 1.35;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
