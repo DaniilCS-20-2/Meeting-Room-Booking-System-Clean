@@ -69,6 +69,18 @@ const getContrastText = (hex) => {
 
 const fmtClock = (d) => d.toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
 
+const fmtWeekRange = (start) => {
+  const end = new Date(start.getTime() + 6 * 86400000);
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  if (sameMonth) {
+    const monthYear = end.toLocaleDateString("nn-NO", { month: "long", year: "numeric" });
+    return `${start.getDate()}.–${end.getDate()}. ${monthYear}`;
+  }
+  const a = start.toLocaleDateString("nn-NO", { day: "numeric", month: "short" });
+  const b = end.toLocaleDateString("nn-NO", { day: "numeric", month: "short", year: "numeric" });
+  return `${a} – ${b}`;
+};
+
 export const OverviewCalendar = ({
   token,
   canSeeDetails = false,
@@ -150,6 +162,8 @@ export const OverviewCalendar = ({
 
   const prevWeek = () => setWeekStart(new Date(weekStart.getTime() - 7 * 86400000));
   const nextWeek = () => setWeekStart(new Date(weekStart.getTime() + 7 * 86400000));
+  const goToday = () => setWeekStart(startOfWeek());
+  const weekRangeLabel = useMemo(() => fmtWeekRange(weekStart), [weekStart]);
 
   // Адаптивное позиционирование тултипа: на нижних часах — вверх, на крайних
   // колонках — прижимаем к ближайшему краю, чтобы тултип не вылезал за сетку.
@@ -166,54 +180,70 @@ export const OverviewCalendar = ({
 
   return (
     <section className={`overview-cal ${fullscreen ? "overview-cal--fullscreen" : ""}`}>
-      <div className="overview-cal__head">
-        {!fullscreen && (
-          <h2 className="section-title overview-cal__title">{t.home_overview_calendar}</h2>
-        )}
-        <div className="overview-cal__actions">
-          <div className="calendar-nav">
-            <button type="button" className="btn btn--small" onClick={prevWeek}>&larr;</button>
-            <span>
-              {weekStart.toLocaleDateString("nn-NO")} &ndash;{" "}
-              {new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString("nn-NO")}
-            </span>
-            <button type="button" className="btn btn--small" onClick={nextWeek}>&rarr;</button>
-          </div>
-          {showFullscreenButton && (
-            <button
-              type="button"
-              className="btn btn--small overview-cal__fullscreen-btn"
-              onClick={() => navigate("/calendar")}
-              title="Opne fullskjerm-kalender"
-              aria-label="Opne fullskjerm-kalender"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+      <div className="overview-cal__toolbar">
+        <div className="overview-cal__top">
+          <h2 className="section-title overview-cal__title">
+            {t.home_overview_calendar}
+          </h2>
+          <div className="overview-cal__controls">
+            <div className="overview-cal__week-nav" role="group" aria-label={t.home_overview_calendar}>
+              <button
+                type="button"
+                className="overview-cal__week-btn"
+                onClick={prevWeek}
+                aria-label={t.calendar_week_prev}
               >
-                <rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M9 20H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M12 17V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </button>
-          )}
+                &larr;
+              </button>
+              <span className="overview-cal__week-label">{weekRangeLabel}</span>
+              <button
+                type="button"
+                className="overview-cal__week-btn"
+                onClick={nextWeek}
+                aria-label={t.calendar_week_next}
+              >
+                &rarr;
+              </button>
+              <button type="button" className="btn btn--small overview-cal__today-btn" onClick={goToday}>
+                {t.calendar_today}
+              </button>
+            </div>
+            {showFullscreenButton && (
+              <button
+                type="button"
+                className="btn btn--small overview-cal__fullscreen-btn"
+                onClick={() => navigate("/calendar")}
+                title={t.calendar_fullscreen}
+                aria-label={t.calendar_fullscreen}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 20H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M12 17V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {roomLegend.length > 0 && (
-        <div className="calendar-legend">
-          {roomLegend.map((r) => (
-            <span key={r.id} className="calendar-legend__item">
-              <span className="calendar-legend__dot" style={{ background: r.color }} />
-              {r.name}
-            </span>
-          ))}
-        </div>
-      )}
+        {roomLegend.length > 0 && (
+          <div className="calendar-legend">
+            {roomLegend.map((r) => (
+              <span key={r.id} className="calendar-legend__item">
+                <span className="calendar-legend__swatch" style={{ background: r.color }} />
+                {r.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="calendar-grid calendar-grid--overview">
         <div className="calendar-grid__header">

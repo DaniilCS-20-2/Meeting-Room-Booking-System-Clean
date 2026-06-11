@@ -948,10 +948,12 @@ body.tv-display-root--preview,
   background: transparent; border: 0;
   font-size: 13px; color: #374151;
 }
-.calendar-legend__item { display: inline-flex; align-items: center; gap: 6px; }
-.calendar-legend__dot {
+.calendar-legend__item { display: inline-flex; align-items: center; gap: 8px; }
+.calendar-legend__dot,
+.calendar-legend__swatch {
   width: 12px; height: 12px; border-radius: 3px;
   border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 /* Booked calendar cells: цвет подписи наследуется от ячейки —
@@ -1032,6 +1034,24 @@ body.tv-display-root--preview,
   .calendar-grid__day-label { padding: 6px 2px; font-size: 10px; }
   .calendar-grid__hour { padding: 2px 4px; font-size: 10px; }
   .calendar-grid__cell { min-height: 36px; padding: 2px; }
+  .overview-cal__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .overview-cal__controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .overview-cal__week-nav {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .overview-cal__week-label {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 13px;
+  }
+
   .calendar-grid__label {
     font-size: 9px;
     white-space: normal;
@@ -1200,25 +1220,83 @@ body.tv-display-root--preview,
 
 /* --- Общий обзорный календарь на главной --- */
 .overview-cal { margin: 16px 0 32px; }
-.overview-cal__head {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px;
+.overview-cal__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-.overview-cal__actions {
+.overview-cal__top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.overview-cal__title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.overview-cal__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.overview-cal__week-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.overview-cal__week-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.overview-cal__week-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+.overview-cal__week-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  min-width: 10.5em;
+  text-align: center;
+  white-space: nowrap;
+  padding: 0 6px;
+}
+.overview-cal__today-btn {
+  margin-left: 2px;
+  white-space: nowrap;
 }
 .overview-cal__fullscreen-btn {
-  min-width: 30px;
-  padding: 4px 8px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
   line-height: 0;
+  flex-shrink: 0;
 }
 .overview-cal__fullscreen-btn svg {
   display: block;
 }
-.overview-cal__title { margin: 0; }
 /* Ячейка-контейнер для чанков. Сама ячейка прозрачна — фон/цвета задаём чанкам.
    Это позволяет умещать несколько комнат в одном часовом слоте бок о бок. */
 .overview-cal__cell {
@@ -1285,35 +1363,32 @@ body.tv-display-root--preview,
   flex: 1 1 auto;
   min-height: 0;
 }
-.overview-cal--fullscreen .overview-cal__head {
-  position: absolute;
-  top: 4px;
-  right: 10px;
-  z-index: 5;
-  justify-content: flex-end;
-  min-height: 0;
-  margin-bottom: 0;
-}
-.overview-cal--fullscreen .calendar-nav {
-  margin-bottom: 0;
-}
-.overview-cal--fullscreen .calendar-legend {
-  margin: 0 0 2px;
-  padding: 0;
-  gap: 18px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #111827;
-  min-height: 30px;
-  align-items: center;
-  padding-right: 220px;
-}
-.overview-cal--fullscreen .calendar-legend__item {
+.overview-cal--fullscreen .overview-cal__toolbar {
+  margin-bottom: 8px;
   gap: 8px;
 }
+.overview-cal--fullscreen .overview-cal__top {
+  gap: 12px;
+}
+.overview-cal--fullscreen .overview-cal__title {
+  font-size: clamp(20px, 2.2vw, 28px);
+}
+.overview-cal--fullscreen .overview-cal__week-label {
+  font-size: 15px;
+  min-width: 12em;
+}
+.overview-cal--fullscreen .calendar-legend {
+  margin: 0;
+  padding: 0;
+  gap: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+.overview-cal--fullscreen .calendar-legend__swatch,
 .overview-cal--fullscreen .calendar-legend__dot {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 4px;
 }
 .overview-cal--fullscreen .calendar-grid {
