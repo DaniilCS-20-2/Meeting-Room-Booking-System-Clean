@@ -18,9 +18,6 @@ const dayBounds = () => {
   return { start, end };
 };
 
-const lineParts = (item) =>
-  [item.roomName, item.guestNames, item.hostName, item.companyName].filter(Boolean);
-
 export const TvDisplayPage = () => {
   const [searchParams] = useSearchParams();
   const previewTransparent = searchParams.get("preview") === "1";
@@ -133,26 +130,37 @@ export const TvDisplayPage = () => {
         <ul className="tv-display__list">
           {visibleItems.map((item) => (
             <li key={item.id} className="tv-display__row">
-              {item.companyLogoUrl ? (
-                <img
-                  src={resolveUploadUrl(item.companyLogoUrl)}
-                  alt=""
-                  className="tv-display__logo"
-                />
-              ) : (
-                <span className="tv-display__logo-spacer" aria-hidden="true" />
-              )}
+              <div className="tv-display__brand">
+                {item.companyLogoUrl ? (
+                  <img
+                    src={resolveUploadUrl(item.companyLogoUrl)}
+                    alt=""
+                    className="tv-display__logo"
+                  />
+                ) : (
+                  <span className="tv-display__logo-spacer" aria-hidden="true" />
+                )}
+                {item.companyName && (
+                  <p className="tv-display__company">{item.companyName}</p>
+                )}
+              </div>
               <div className="tv-display__info">
                 <span className="tv-display__time">
                   {fmtClock(item.startTime)} – {fmtClock(item.endTime)}
                 </span>
-                <p className="tv-display__line">
-                  {lineParts(item).map((text, i) => (
-                    <span key={i} className="tv-display__part">{text}</span>
-                  ))}
-                </p>
-                {item.guestNote && (
-                  <p className="tv-display__note">{item.guestNote}</p>
+                <p className="tv-display__room">{item.roomName}</p>
+                {(item.guestNames || item.guestNote) && (
+                  <div className="tv-display__guest-block">
+                    {item.guestNames && (
+                      <p className="tv-display__guests">{item.guestNames}</p>
+                    )}
+                    {item.guestNote && (
+                      <p className="tv-display__guest-note">{item.guestNote}</p>
+                    )}
+                  </div>
+                )}
+                {item.hostName && (
+                  <p className="tv-display__host">{item.hostName}</p>
                 )}
               </div>
             </li>

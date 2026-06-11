@@ -824,25 +824,42 @@ body.tv-display-root--preview,
   align-items: center;
   padding: 14px 0;
 }
+.tv-display__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  justify-self: center;
+  min-width: 0;
+}
 .tv-display__logo {
   width: min(260px, 21.6vw);
   height: min(180px, 14.4vw);
   max-height: 200px;
   object-fit: contain;
   object-position: center center;
-  justify-self: center;
 }
 .tv-display__logo-spacer {
   width: min(260px, 21.6vw);
   height: 1px;
-  justify-self: center;
+}
+.tv-display__company {
+  margin: 0;
+  max-width: min(260px, 21.6vw);
+  text-align: center;
+  font-size: clamp(20px, 2.1vw, 30px);
+  font-weight: 600;
+  line-height: 1.25;
+  color: #111827;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
 }
 .tv-display__info {
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
 }
 .tv-display__time {
   font-size: clamp(29px, 3.24vw, 45px);
@@ -853,29 +870,48 @@ body.tv-display-root--preview,
   line-height: 1.2;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
 }
-.tv-display__line {
+.tv-display__room {
   margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.2em 0.65em;
   font-size: clamp(29px, 3.24vw, 45px);
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.3;
   color: #111827;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
 }
-.tv-display__part {
-  font: inherit;
-  color: inherit;
+.tv-display__guest-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 100%;
 }
-.tv-display__note {
-  margin: 0.15em 0 0;
-  font-size: clamp(22px, 2.4vw, 32px);
+.tv-display__guests {
+  margin: 0;
+  font-size: clamp(26px, 2.9vw, 40px);
   font-weight: 500;
   line-height: 1.35;
   color: #111827;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__guest-note {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 32px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #374151;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__host {
+  margin: 0;
+  font-size: clamp(26px, 2.9vw, 40px);
+  font-weight: 600;
+  line-height: 1.35;
+  color: #111827;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(255, 255, 255, 0.7);
+}
+.tv-display__guest-block + .tv-display__host {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(17, 24, 39, 0.18);
 }
 .tv-display__empty {
   font-size: clamp(25px, 2.88vw, 38px);
@@ -897,6 +933,10 @@ body.tv-display-root--preview,
   .tv-display__logo-spacer {
     width: min(150px, 32vw);
     height: min(108px, 22vw);
+  }
+  .tv-display__company {
+    max-width: min(150px, 32vw);
+    font-size: clamp(16px, 3.5vw, 22px);
   }
   .tv-display__time {
     font-size: clamp(22px, 4.5vw, 32px);
