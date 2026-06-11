@@ -1020,6 +1020,20 @@ body.tv-display-root--preview,
    Мобильная адаптация
    ============================================================ */
 @media (max-width: 768px) {
+  /* Safe-area / status bar: белый фон над шапкой (не серый body). */
+  html { background-color: #fff; }
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: #fff;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
   .home-grid { grid-template-columns: 1fr; margin-top: 14px; }
   .home-card__media,
   .home-card__media-img { height: 200px; }
