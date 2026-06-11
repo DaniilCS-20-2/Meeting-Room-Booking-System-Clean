@@ -11,24 +11,35 @@ const PAGE_RELOAD_MS = 10 * 60_000;
 const itemVisualWeight = (item) => {
   let w = 1;
   if (item.companyLogoUrl) w += 0.35;
-  if (item.guestNames) w += 0.55;
+  if (item.guestNames) {
+    w += 0.55;
+    if (String(item.guestNames).length > 28) w += 0.35;
+  }
   if (item.guestNote) w += 0.45;
   if (item.hostName) w += 0.45;
   return w;
 };
 
-/** 0 = крупно, 1–2 = компактнее, 3–4 = два столбца. */
+/** 0 = крупно, 1–2 = компактнее, 3–4 = два столбца. Берём max(по числу, по нагрузке). */
 const pickFitTier = (items) => {
   const count = items.length;
   if (count === 0) return 0;
 
   const load = items.reduce((sum, item) => sum + itemVisualWeight(item), 0);
 
-  if (count >= 9 || load >= 11.5) return 4;
-  if (count >= 7 || load >= 9) return 3;
-  if (count >= 5 || load >= 7.5) return 2;
-  if (count >= 4 || load >= 5.5) return 1;
-  return 0;
+  const byCount =
+    count >= 9 ? 4 :
+    count >= 6 ? 3 :
+    count >= 5 ? 3 :
+    count >= 4 ? 1 : 0;
+
+  const byLoad =
+    load >= 11.5 ? 4 :
+    load >= 9 ? 3 :
+    load >= 7 ? 2 :
+    load >= 5.5 ? 1 : 0;
+
+  return Math.max(byCount, byLoad);
 };
 
 const fmtClock = (iso) =>

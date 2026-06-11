@@ -753,11 +753,13 @@ body.tv-display-root--preview,
   flex: 1;
   width: 100%;
   min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: clamp(20px, 3.5vh, 43px) clamp(22px, 4vw, 50px) clamp(16px, 2.5vh, 32px);
+  padding: clamp(16px, 2.5vh, 36px) clamp(22px, 4vw, 50px) clamp(12px, 2vh, 24px);
   background: transparent;
   color: #111827;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
@@ -809,21 +811,21 @@ body.tv-display-root--preview,
   --tv-info-gap: 5px;
 }
 .tv-display--fit-3 {
-  --tv-fs-heading: clamp(22px, 2.5vw, 32px);
-  --tv-fs-time: clamp(19px, 2vw, 28px);
-  --tv-fs-room: clamp(19px, 2vw, 28px);
-  --tv-fs-guest: clamp(17px, 1.8vw, 25px);
-  --tv-fs-note: clamp(15px, 1.5vw, 22px);
-  --tv-fs-host: clamp(17px, 1.8vw, 25px);
-  --tv-logo-w: min(130px, 12vw);
-  --tv-logo-h: min(80px, 7vw);
-  --tv-brand-w: minmax(72px, 110px);
-  --tv-row-gap-x: 14px;
-  --tv-row-gap-y: 12px;
-  --tv-row-pad: 6px;
-  --tv-head-mb: 16px;
-  --tv-list-gap: 10px 20px;
-  --tv-info-gap: 4px;
+  --tv-fs-heading: clamp(20px, 2.2vw, 30px);
+  --tv-fs-time: clamp(17px, 1.8vw, 26px);
+  --tv-fs-room: clamp(17px, 1.8vw, 26px);
+  --tv-fs-guest: clamp(15px, 1.6vw, 23px);
+  --tv-fs-note: clamp(14px, 1.4vw, 20px);
+  --tv-fs-host: clamp(15px, 1.6vw, 23px);
+  --tv-logo-w: min(110px, 10vw);
+  --tv-logo-h: min(68px, 6vw);
+  --tv-brand-w: minmax(64px, 96px);
+  --tv-row-gap-x: 12px;
+  --tv-row-gap-y: 10px;
+  --tv-row-pad: 5px;
+  --tv-head-mb: 12px;
+  --tv-list-gap: 8px 16px;
+  --tv-info-gap: 3px;
   --tv-list-cols: 2;
 }
 .tv-display--fit-3 .tv-display__logo { max-height: 96px; }
