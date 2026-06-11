@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { apiFetch, resolveUploadUrl } from "../api";
 import { t } from "../i18n/labels";
@@ -6,7 +6,30 @@ import { t } from "../i18n/labels";
 const DATA_POLL_MS = 15_000;
 const CLOCK_TICK_MS = 15_000;
 const PAGE_RELOAD_MS = 10 * 60_000;
-const MAX_FIT_TIER = 4;
+
+/** Оценка «занятости» экрана одной записью (лого, гости, хост = выше). */
+const itemVisualWeight = (item) => {
+  let w = 1;
+  if (item.companyLogoUrl) w += 0.35;
+  if (item.guestNames) w += 0.55;
+  if (item.guestNote) w += 0.45;
+  if (item.hostName) w += 0.45;
+  return w;
+};
+
+/** 0 = крупно, 1–2 = компактнее, 3–4 = два столбца. */
+const pickFitTier = (items) => {
+  const count = items.length;
+  if (count === 0) return 0;
+
+  const load = items.reduce((sum, item) => sum + itemVisualWeight(item), 0);
+
+  if (count >= 9 || load >= 11.5) return 4;
+  if (count >= 7 || load >= 9) return 3;
+  if (count >= 5 || load >= 7.5) return 2;
+  if (count >= 4 || load >= 5.5) return 1;
+  return 0;
+};
 
 const fmtClock = (iso) =>
   new Date(iso).toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
@@ -27,8 +50,6 @@ export const TvDisplayPage = () => {
   const [loading, setLoading] = useState(true);
   const [dayKey, setDayKey] = useState(() => new Date().toDateString());
   const [now, setNow] = useState(() => Date.now());
-  const [fitTier, setFitTier] = useState(0);
-  const contentRef = useRef(null);
 
   const bounds = useMemo(() => dayBounds(), [dayKey]);
 
@@ -36,6 +57,8 @@ export const TvDisplayPage = () => {
     () => items.filter((item) => new Date(item.endTime).getTime() > now),
     [items, now]
   );
+
+  const fitTier = useMemo(() => pickFitTier(visibleItems), [visibleItems]);
 
   const dayLabel = useMemo(
     () => bounds.start.toLocaleDateString("nn-NO", {
@@ -108,33 +131,6 @@ export const TvDisplayPage = () => {
     return () => clearInterval(reloadTimer);
   }, []);
 
-  useLayoutEffect(() => {
-    if (loading) return;
-    setFitTier(0);
-  }, [visibleItems, loading, dayLabel]);
-
-  useLayoutEffect(() => {
-    if (loading) return undefined;
-    const node = contentRef.current;
-    if (!node) return undefined;
-
-    const overflows = () => {
-      const rect = node.getBoundingClientRect();
-      return rect.bottom > window.innerHeight - 6;
-    };
-
-    if (overflows() && fitTier < MAX_FIT_TIER) {
-      setFitTier((tier) => tier + 1);
-      return undefined;
-    }
-
-    const onResize = () => {
-      setFitTier(0);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [visibleItems, loading, fitTier, dayLabel]);
-
   const fitClass = fitTier > 0 ? ` tv-display--fit-${fitTier}` : "";
 
   return (
@@ -143,7 +139,7 @@ export const TvDisplayPage = () => {
         <p className="tv-display__preview-banner">{t.display_preview_hint}</p>
       )}
 
-      <div className="tv-display__content" ref={contentRef}>
+      <div className="tv-display__content">
         <header className="tv-display__head">
           <p className="tv-display__heading">
             <span className="tv-display__title">{t.display_title}</span>
