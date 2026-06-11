@@ -860,9 +860,14 @@ body.tv-display-root--preview,
 .tv-display__company {
   font-weight: 600;
 }
-.tv-display__guest {
+.tv-display__guest,
+.tv-display__host {
   font-weight: 500;
   color: #374151;
+}
+.tv-display__host {
+  font-weight: 600;
+  color: #1f2937;
 }
 .tv-display__empty {
   font-size: clamp(25px, 2.88vw, 38px);

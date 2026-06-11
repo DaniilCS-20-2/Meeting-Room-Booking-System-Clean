@@ -110,9 +110,7 @@ export const TvDisplayPage = () => {
       )}
 
       <ul className="tv-display__list">
-        {visibleItems.map((item) => {
-          const withWhom = item.guestLabel || item.hostName;
-          return (
+        {visibleItems.map((item) => (
             <li key={item.id} className="tv-display__row">
               {item.companyLogoUrl ? (
                 <img
@@ -129,25 +127,28 @@ export const TvDisplayPage = () => {
                 </span>
                 <p className="tv-display__line">
                   <span className="tv-display__room">{item.roomName}</span>
+                  {item.guestLabel && (
+                    <>
+                      <span className="tv-display__dot" aria-hidden="true">·</span>
+                      <span className="tv-display__guest">{item.guestLabel}</span>
+                    </>
+                  )}
+                  {item.hostName && (
+                    <>
+                      <span className="tv-display__dot" aria-hidden="true">·</span>
+                      <span className="tv-display__host">{item.hostName}</span>
+                    </>
+                  )}
                   {item.companyName && (
                     <>
                       <span className="tv-display__dot" aria-hidden="true">·</span>
                       <span className="tv-display__company">{item.companyName}</span>
                     </>
                   )}
-                  {withWhom && (
-                    <>
-                      <span className="tv-display__dot" aria-hidden="true">·</span>
-                      <span className="tv-display__guest">
-                        {t.display_with} {withWhom}
-                      </span>
-                    </>
-                  )}
                 </p>
               </div>
             </li>
-          );
-        })}
+        ))}
       </ul>
       </div>
     </div>

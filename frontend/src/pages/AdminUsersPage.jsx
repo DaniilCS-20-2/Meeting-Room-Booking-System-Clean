@@ -231,7 +231,7 @@ export const AdminUsersPage = () => {
         method: "PUT", token,
         body: { displayName: editForm.displayName },
       });
-      setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updated } : u)));
       setEditingId(null);
     } catch (err) {
       alert(err.message);
@@ -249,7 +249,7 @@ export const AdminUsersPage = () => {
       const updated = await apiUpload(`/admin/users/${editingId}/avatar`, {
         file, fieldName: "avatar", token,
       });
-      setUsers((prev) => prev.map((u) => (u.id === editingId ? updated : u)));
+      setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated } : u)));
       setEditForm((p) => ({ ...p, avatarUrl: updated.avatar_url || "" }));
     } catch (err) {
       alert(err.message);

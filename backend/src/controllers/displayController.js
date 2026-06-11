@@ -2,10 +2,11 @@ const BookingRepository = require("../models/bookingRepository");
 const HttpError = require("../utils/httpError");
 
 const formatGuest = (row) => {
-  const parts = [row.guest_first_name, row.guest_last_name].filter(Boolean);
-  const names = parts.join(" ").trim();
+  const names = [row.guest_first_name, row.guest_last_name].filter(Boolean).join(" ").trim();
+  const desc = (row.guest_description || "").trim();
+  if (names && desc) return `${names} — ${desc}`;
   if (names) return names;
-  if (row.guest_description) return row.guest_description;
+  if (desc) return desc;
   return null;
 };
 

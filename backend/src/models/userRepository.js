@@ -126,17 +126,17 @@ class UserRepository {
   // Админ обновляет данные пользователя (только имя и аватар).
   static async adminUpdate(id, { displayName, avatarUrl }) {
     // COALESCE предотвращает затирание значения при null.
-    const { rows } = await pool.query(
+    const { rowCount } = await pool.query(
       `UPDATE users
        SET display_name = COALESCE($2, display_name),
            avatar_url   = COALESCE($3, avatar_url),
            updated_at   = NOW()
-       WHERE id = $1
-       RETURNING id, email, display_name, role, avatar_url, email_verified, created_at, company_id`,
+       WHERE id = $1`,
       [id, displayName, avatarUrl]
     );
-    // Возвращаем обновлённого пользователя или null.
-    return rows[0] || null;
+    if (!rowCount) return null;
+    // С JOIN на companies — иначе в админке «пропадает» компания в UI.
+    return this.findById(id);
   }
 
   // Админ меняет компанию пользователя; companyId === null очищает привязку.
