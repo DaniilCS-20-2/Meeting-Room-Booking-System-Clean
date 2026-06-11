@@ -1419,7 +1419,6 @@ body.tv-display-root--preview,
   overflow: hidden;
 }
 .overview-cal--fullscreen {
-  position: relative;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -1427,22 +1426,14 @@ body.tv-display-root--preview,
   min-height: 0;
   width: 100%;
 }
-.overview-cal--fullscreen .overview-cal__toolbar--overlay {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  right: 4px;
-  z-index: 20;
-  margin: 0;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
-  pointer-events: none;
-}
-.overview-cal--fullscreen .overview-cal__toolbar--overlay * {
-  pointer-events: auto;
+.overview-cal--fullscreen .overview-cal__toolbar--compact {
+  flex-shrink: 0;
+  margin: 0 0 6px;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 .overview-cal--fullscreen .overview-cal__meta {
   min-height: 0;
@@ -1483,8 +1474,6 @@ body.tv-display-root--preview,
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  padding-top: 46px;
-  box-sizing: border-box;
 }
 .overview-cal--fullscreen .calendar-grid__body {
   flex: 1 1 auto;

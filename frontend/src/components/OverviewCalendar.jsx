@@ -246,7 +246,7 @@ export const OverviewCalendar = ({
 
   return (
     <section className={`overview-cal ${fullscreen ? "overview-cal--fullscreen" : ""}`}>
-      {!fullscreen && (
+      {!fullscreen ? (
         <div className="overview-cal__toolbar">
           <div className="overview-cal__top">
             <h2 className="section-title overview-cal__title">
@@ -254,6 +254,10 @@ export const OverviewCalendar = ({
             </h2>
             {weekControls}
           </div>
+          {legendRow}
+        </div>
+      ) : legendRow && (
+        <div className="overview-cal__toolbar overview-cal__toolbar--compact">
           {legendRow}
         </div>
       )}
@@ -340,12 +344,6 @@ export const OverviewCalendar = ({
           ))}
         </div>
       </div>
-
-      {fullscreen && legendRow && (
-        <div className="overview-cal__toolbar overview-cal__toolbar--overlay">
-          {legendRow}
-        </div>
-      )}
     </section>
   );
 };
