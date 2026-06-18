@@ -165,13 +165,24 @@ export const BookingModal = ({
   const handleUpdateEndTime = () => {
     if (!end) { setError("Vel ny sluttid."); return; }
     const newEnd = parseLocalInput(end);
+    let recurring = null;
+    if (useRecurring) {
+      if (weekdays.size === 0) { setError("Vel minst éin ukedag."); return; }
+      if (!untilDate) { setError("Vel sluttdato for serien."); return; }
+      const until = new Date(untilDate);
+      until.setHours(23, 59, 59, 999);
+      recurring = { weekdays: [...weekdays], untilDate: until.toISOString() };
+    }
     askThenRun({
       title: t.modal_confirm_update_title,
       text: t.modal_confirm_update_text,
       run: () => apiFetch(`/bookings/${booking.id}`, {
         method: "PATCH",
         token,
-        body: { endDateTime: newEnd.toISOString() },
+        body: {
+          endDateTime: newEnd.toISOString(),
+          recurring,
+        },
       }),
     });
   };
@@ -300,7 +311,7 @@ export const BookingModal = ({
               </div>
             )}
 
-            {!isEdit && (
+            {(!isEdit || !booking?.recurrence_group_id) && (
               <>
                 <label className="checkbox-label">
                   <input
@@ -334,6 +345,11 @@ export const BookingModal = ({
                   </div>
                 )}
               </>
+            )}
+            {isEdit && booking?.recurrence_group_id && (
+              <p className="helper-text">
+                Denne bookinga er allereie del av ei serie.
+              </p>
             )}
 
             {error && <p className="error-text">{error}</p>}

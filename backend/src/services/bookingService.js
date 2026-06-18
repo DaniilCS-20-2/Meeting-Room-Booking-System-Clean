@@ -191,11 +191,10 @@ class BookingService {
     });
   }
 
-  // Редактирование времени окончания брони:
-  // - можно и укорачивать, и удлинять;
-  // - при удлинении проверяем конфликты с другими бронированиями комнаты;
-  // - соблюдаем min/max ограничения комнаты.
-  static async updateBookingEndTime({ bookingId, requesterId, requesterRole, newEndDateTime }) {
+  // Редактирование брони:
+  // - всегда можно менять end_time (если соблюдены ограничения);
+  // - опционально можно «превратить» одиночную бронь в recurring-серию.
+  static async updateBookingEndTime({ bookingId, requesterId, requesterRole, newEndDateTime, recurring = null }) {
     if (!bookingId) throw new HttpError(400, "bookingId is required.");
     if (!newEndDateTime) throw new HttpError(400, "endDateTime is required.");
 
@@ -246,23 +245,92 @@ class BookingService {
       }
     }
 
-    // Проверяем пересечение с другими бронями этой комнаты.
-    const hasConflict = await BookingRepository.withTransaction((client) =>
-      BookingRepository.hasTimeConflictExcludingBooking(
+    const recurringRequested = recurring != null;
+    if (recurringRequested && booking.recurrence_group_id) {
+      throw new HttpError(400, "Booking is already part of a recurring series.");
+    }
+
+    return BookingRepository.withTransaction(async (client) => {
+      // Проверяем пересечение с другими бронями этой комнаты.
+      const hasConflict = await BookingRepository.hasTimeConflictExcludingBooking(
         client,
         booking.room_id,
         start,
         newEnd,
         bookingId
-      )
-    );
-    if (hasConflict) {
-      throw new HttpError(409, "Selected room is already booked for this time slot.");
-    }
+      );
+      if (hasConflict) {
+        throw new HttpError(409, "Selected room is already booked for this time slot.");
+      }
 
-    const updated = await BookingRepository.updateEndTime(bookingId, newEnd);
-    if (!updated) throw new HttpError(409, "Booking could not be updated.");
-    return updated;
+      let updated = await BookingRepository.updateEndTime(bookingId, newEnd, client);
+      if (!updated) throw new HttpError(409, "Booking could not be updated.");
+
+      // Если recurring не передан — обычное редактирование одной записи.
+      if (!recurringRequested) {
+        return updated;
+      }
+
+      // Генерируем вхождения серии по обновлённому интервалу текущей записи.
+      const generated = BookingService.buildOccurrences({
+        startTime: start,
+        endTime: newEnd,
+        recurring,
+      });
+
+      const recurrenceGroupId = crypto.randomUUID();
+      updated = await BookingRepository.updateRecurrenceGroup(updated.id, recurrenceGroupId, client);
+      if (!updated) throw new HttpError(409, "Booking could not be updated.");
+
+      // Первая точка — сама редактируемая запись; добавляем только будущие.
+      const futureOccurrences = generated.filter(
+        (occurrence) => occurrence.startTime.getTime() > start.getTime()
+      );
+
+      const createdBookings = [];
+      const skippedOccurrences = [];
+      for (const occurrence of futureOccurrences) {
+        const hasSeriesConflict = await BookingRepository.hasTimeConflict(
+          client,
+          booking.room_id,
+          occurrence.startTime,
+          occurrence.endTime
+        );
+        if (hasSeriesConflict) {
+          skippedOccurrences.push({
+            startTime: occurrence.startTime,
+            endTime: occurrence.endTime,
+            reason: "time conflict",
+          });
+          continue;
+        }
+
+        const inserted = await BookingRepository.insertBooking(client, {
+          roomId: booking.room_id,
+          userId: booking.user_id,
+          startTime: occurrence.startTime,
+          endTime: occurrence.endTime,
+          recurrenceGroupId,
+          comment: booking.comment,
+          guestFirstName: booking.guest_first_name,
+          guestLastName: booking.guest_last_name,
+          guestDescription: booking.guest_description,
+          status: booking.status,
+        });
+        createdBookings.push(inserted);
+      }
+
+      return {
+        ...updated,
+        recurrence_total_created: createdBookings.length,
+        recurrence_total_skipped: skippedOccurrences.length,
+      };
+    }).catch((error) => {
+      if (error && error.constraint === "exclude_room_overlapping_bookings") {
+        throw new HttpError(409, "Selected room is already booked for this time slot.");
+      }
+      throw error;
+    });
   }
 
   // Отмена всей будущей серии recurring-бронирований.

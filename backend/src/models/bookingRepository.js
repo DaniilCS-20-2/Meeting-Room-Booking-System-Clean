@@ -239,8 +239,9 @@ class BookingRepository {
 
   // Меняем end_time существующего бронирования (используется для укорачивания).
   // Возвращаем обновлённую запись или null, если строка не найдена.
-  static async updateEndTime(id, newEndTime) {
-    const { rows } = await pool.query(
+  static async updateEndTime(id, newEndTime, client = null) {
+    const db = client || pool;
+    const { rows } = await db.query(
       `UPDATE bookings
          SET end_time = $2,
              updated_at = NOW()
@@ -250,6 +251,24 @@ class BookingRepository {
                  recurrence_group_id, comment, guest_first_name, guest_last_name,
                  guest_description, created_at, updated_at`,
       [id, newEndTime]
+    );
+    return rows[0] || null;
+  }
+
+  // Привязываем существующее бронирование к recurrence-группе.
+  // Используется, когда одиночную бронь превращают в серию при редактировании.
+  static async updateRecurrenceGroup(id, recurrenceGroupId, client = null) {
+    const db = client || pool;
+    const { rows } = await db.query(
+      `UPDATE bookings
+         SET recurrence_group_id = $2,
+             updated_at = NOW()
+       WHERE id = $1
+         AND status IN ('pending', 'confirmed')
+       RETURNING id, room_id, user_id, start_time, end_time, status,
+                 recurrence_group_id, comment, guest_first_name, guest_last_name,
+                 guest_description, created_at, updated_at`,
+      [id, recurrenceGroupId]
     );
     return rows[0] || null;
   }

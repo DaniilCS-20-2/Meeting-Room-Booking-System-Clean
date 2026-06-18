@@ -159,11 +159,12 @@ const createBookingSchema = z
   })
   .strict();
 
-// PATCH /api/bookings/:id — редактирование окончания (укорачивать/удлинять).
-// Передаём только endDateTime, а бизнес-правила валидирует сервис.
+// PATCH /api/bookings/:id — редактирование окончания + опциональный recurring.
+// recurring при PATCH превращает одиночную встречу в серию.
 const updateBookingSchema = z
   .object({
     endDateTime: z.string().min(5).max(40),
+    recurring: recurringSchema.optional().nullable(),
   })
   .strict();
 

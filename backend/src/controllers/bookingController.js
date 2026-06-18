@@ -153,6 +153,7 @@ const updateBooking = async (req, res, next) => {
       requesterId: req.user.id,
       requesterRole: req.user.role,
       newEndDateTime: req.body.endDateTime,
+      recurring: req.body.recurring ?? null,
     });
     notifyBookingUpdated(bookingBefore, updated);
     res.json({ success: true, data: updated });
