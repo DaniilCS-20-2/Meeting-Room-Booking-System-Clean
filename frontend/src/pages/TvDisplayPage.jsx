@@ -63,6 +63,100 @@ const splitColumns = (items, columnCount) => {
 const fmtClock = (iso) =>
   new Date(iso).toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
 
+const DEFAULT_LOGO_FRAME_BG = "rgba(255, 255, 255, 0.92)";
+
+const clampChannel = (value) => Math.max(0, Math.min(255, Math.round(value)));
+
+const getEdgeMatchedFrameColor = (img) => {
+  try {
+    const srcW = img.naturalWidth || 0;
+    const srcH = img.naturalHeight || 0;
+    if (!srcW || !srcH) return DEFAULT_LOGO_FRAME_BG;
+
+    const maxDim = 72;
+    const scale = Math.min(1, maxDim / Math.max(srcW, srcH));
+    const w = Math.max(8, Math.round(srcW * scale));
+    const h = Math.max(8, Math.round(srcH * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return DEFAULT_LOGO_FRAME_BG;
+    ctx.drawImage(img, 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+
+    const points = [];
+    const pushPixel = (x, y) => {
+      const i = (y * w + x) * 4;
+      points.push({
+        r: data[i],
+        g: data[i + 1],
+        b: data[i + 2],
+        a: data[i + 3],
+      });
+    };
+
+    // Берём пиксели только по периметру: так цвет подложки совпадает
+    // с кромкой исходного лого-карточки.
+    for (let x = 0; x < w; x++) {
+      pushPixel(x, 0);
+      pushPixel(x, h - 1);
+    }
+    for (let y = 1; y < h - 1; y++) {
+      pushPixel(0, y);
+      pushPixel(w - 1, y);
+    }
+
+    let sumR = 0;
+    let sumG = 0;
+    let sumB = 0;
+    let sumA = 0;
+    for (const p of points) {
+      const alpha = p.a / 255;
+      if (alpha <= 0.02) continue;
+      sumR += p.r * alpha;
+      sumG += p.g * alpha;
+      sumB += p.b * alpha;
+      sumA += alpha;
+    }
+    if (sumA === 0) return DEFAULT_LOGO_FRAME_BG;
+
+    // Слегка подмешиваем белый, чтобы рамка не выглядела грязно
+    // на тёмных/шумных краях исходного логотипа.
+    const edgeR = sumR / sumA;
+    const edgeG = sumG / sumA;
+    const edgeB = sumB / sumA;
+    const soften = 0.12;
+    const r = clampChannel(edgeR * (1 - soften) + 255 * soften);
+    const g = clampChannel(edgeG * (1 - soften) + 255 * soften);
+    const b = clampChannel(edgeB * (1 - soften) + 255 * soften);
+    return `rgb(${r}, ${g}, ${b})`;
+  } catch {
+    return DEFAULT_LOGO_FRAME_BG;
+  }
+};
+
+const TvLogo = ({ companyLogoUrl, companyName }) => {
+  const [frameBg, setFrameBg] = useState(DEFAULT_LOGO_FRAME_BG);
+  const src = resolveUploadUrl(companyLogoUrl);
+
+  useEffect(() => {
+    setFrameBg(DEFAULT_LOGO_FRAME_BG);
+  }, [src]);
+
+  return (
+    <div className="tv-display__logo-frame" style={{ "--tv-logo-frame-bg": frameBg }}>
+      <img
+        src={src}
+        alt={companyName || ""}
+        className="tv-display__logo"
+        onLoad={(e) => setFrameBg(getEdgeMatchedFrameColor(e.currentTarget))}
+      />
+    </div>
+  );
+};
+
 /** Имя/фамилия и короткие фразы — без переноса посередине слова. */
 const PersonText = ({ text, className, as: Tag = "span" }) => {
   if (!text) return null;
@@ -90,13 +184,7 @@ const DisplayRow = ({ item }) => (
   <li className="tv-display__row">
     <div className="tv-display__brand">
       {item.companyLogoUrl ? (
-        <div className="tv-display__logo-frame">
-          <img
-            src={resolveUploadUrl(item.companyLogoUrl)}
-            alt={item.companyName || ""}
-            className="tv-display__logo"
-          />
-        </div>
+        <TvLogo companyLogoUrl={item.companyLogoUrl} companyName={item.companyName} />
       ) : (
         <span className="tv-display__logo-spacer" aria-hidden="true" />
       )}

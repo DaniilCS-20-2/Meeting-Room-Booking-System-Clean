@@ -971,8 +971,8 @@ body.tv-display-root--preview,
   border-radius: 18px;
   overflow: hidden;
   flex-shrink: 0;
-  background: transparent;
-  box-shadow: none;
+  background: var(--tv-logo-frame-bg, rgba(255, 255, 255, 0.92));
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
 }
 .tv-display[data-size="small"] .tv-display__logo-frame {
   max-height: 88px;
