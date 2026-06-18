@@ -1,10 +1,12 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const UserRepository = require("../models/userRepository");
+const WhitelistRepository = require("../models/whitelistRepository");
 const VerificationCodeRepository = require("../models/verificationCodeRepository");
 const HttpError = require("../utils/httpError");
 const { sendVerificationCode } = require("../utils/mailer");
 
-const generateCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const generateCode = () => String(crypto.randomInt(100000, 1000000));
 
 class ProfileService {
   static async updateProfile(userId, { displayName, avatarUrl }) {
@@ -47,11 +49,15 @@ class ProfileService {
       throw new HttpError(400, "Invalid verification code.");
     }
 
+    const consumed = await VerificationCodeRepository.consumeVerified(result.row.id, code);
+    if (!consumed) {
+      throw new HttpError(400, "Invalid verification code.");
+    }
+
     const hash = await bcrypt.hash(newPassword, 10);
     await UserRepository.updatePassword(userId, hash);
     await UserRepository.confirmEmail(userId);
     await UserRepository.bumpTokenVersion(userId);
-    await VerificationCodeRepository.consume(result.row.id);
 
     return { changed: true };
   }
@@ -69,6 +75,10 @@ class ProfileService {
 
     const existing = await UserRepository.findByEmail(newEmail);
     if (existing) throw new HttpError(409, "Email already in use.");
+    const whitelisted = await WhitelistRepository.findByEmail(newEmail);
+    if (!whitelisted) {
+      throw new HttpError(403, "E-posten er ikkje godkjend for registrering.");
+    }
 
     const code = generateCode();
     // Храним новый email в payload кода, не в колонках users — чтобы его
@@ -99,10 +109,18 @@ class ProfileService {
     if (!payloadEmail || payloadEmail !== String(newEmail).toLowerCase()) {
       throw new HttpError(400, "Email mismatch.");
     }
+    const whitelisted = await WhitelistRepository.findByEmail(payloadEmail);
+    if (!whitelisted) {
+      throw new HttpError(403, "E-posten er ikkje godkjend for registrering.");
+    }
+
+    const consumed = await VerificationCodeRepository.consumeVerified(result.row.id, code);
+    if (!consumed) {
+      throw new HttpError(400, "Invalid verification code.");
+    }
 
     const updated = await UserRepository.updateEmail(userId, payloadEmail);
     await UserRepository.bumpTokenVersion(userId);
-    await VerificationCodeRepository.consume(result.row.id);
     return { changed: true, email: updated.email };
   }
 }

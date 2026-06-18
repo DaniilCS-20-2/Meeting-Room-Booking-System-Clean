@@ -25,7 +25,7 @@ router.get("/my", authMiddleware, bookingController.getMy);
 // GET    /api/bookings/room/:roomId — публично (анонимы видят занятость без имён).
 router.get("/room/:roomId", optionalAuthMiddleware, bookingController.getByRoom);
 // GET    /api/bookings/room/:roomId/history — полная история. Только для авторизованных.
-router.get("/room/:roomId/history", authMiddleware, bookingController.getHistoryByRoom);
+router.get("/room/:roomId/history", authMiddleware, writers, bookingController.getHistoryByRoom);
 // PATCH  /api/bookings/:id/cancel — отмена бронирования (своё или любое для админа).
 router.patch("/:id/cancel", authMiddleware, writers, bookingController.cancel);
 // PATCH  /api/bookings/:id — изменение времени окончания (своё или любое для админа).

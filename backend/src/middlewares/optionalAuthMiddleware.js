@@ -31,7 +31,7 @@ const optionalAuthMiddleware = async (req, _res, next) => {
     if (!fresh) {
       return next(new HttpError(401, "User no longer exists."));
     }
-    if (typeof payload.tv === "number" && payload.tv !== fresh.token_version) {
+    if (typeof payload.tv !== "number" || payload.tv !== fresh.token_version) {
       return next(new HttpError(401, "Token has been revoked. Please sign in again."));
     }
     req.user = {

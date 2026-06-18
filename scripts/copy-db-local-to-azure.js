@@ -4,9 +4,8 @@
  */
 const { Pool } = require("../backend/node_modules/pg");
 
-const LOCAL_URL =
-  process.env.LOCAL_DATABASE_URL ||
-  "postgresql://postgres:Dan3002401151@localhost:5432/booking_app_db";
+const LOCAL_URL = process.env.LOCAL_DATABASE_URL;
+const CONFIRM_FLAG = process.env.CONFIRM_DESTRUCTIVE_SYNC;
 
 function azurePool() {
   if (process.env.DATABASE_URL) {
@@ -77,6 +76,16 @@ function serializeValue(meta, value) {
 }
 
 async function main() {
+  if (!LOCAL_URL) {
+    throw new Error("LOCAL_DATABASE_URL is required.");
+  }
+  if (CONFIRM_FLAG !== "YES") {
+    throw new Error("Refusing destructive sync. Set CONFIRM_DESTRUCTIVE_SYNC=YES to continue.");
+  }
+  if (!process.env.DATABASE_URL && (!process.env.PGHOST || !process.env.PGUSER || !process.env.PGPASSWORD)) {
+    throw new Error("Target Azure DB credentials are required (DATABASE_URL or PGHOST/PGUSER/PGPASSWORD).");
+  }
+
   const local = new Pool({ connectionString: LOCAL_URL });
   const azure = azurePool();
 

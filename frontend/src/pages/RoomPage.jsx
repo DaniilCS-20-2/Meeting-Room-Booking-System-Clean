@@ -137,6 +137,7 @@ export const RoomPage = () => {
 
   // State: данные комнаты.
   const [room, setRoom] = useState(null);
+  const [roomLoadError, setRoomLoadError] = useState("");
   // State: бронирования за текущую неделю (для календаря).
   const [bookings, setBookings] = useState([]);
   // State: полная история бронирований (для списка).
@@ -152,8 +153,10 @@ export const RoomPage = () => {
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
-    // Вычисляем понедельник текущей недели.
-    d.setDate(d.getDate() - d.getDay() + 1);
+    // Вычисляем понедельник текущей недели (для Sunday уходим назад на 6 дней).
+    const dow = d.getDay();
+    const diff = dow === 0 ? -6 : 1 - dow;
+    d.setDate(d.getDate() + diff);
     return d;
   });
 
@@ -171,7 +174,10 @@ export const RoomPage = () => {
 
   // Загружаем данные комнаты — публичный эндпоинт, токен опционален.
   useEffect(() => {
-    apiFetch(`/rooms/${roomId}`, { token }).then(setRoom).catch(() => {});
+    setRoomLoadError("");
+    apiFetch(`/rooms/${roomId}`, { token })
+      .then(setRoom)
+      .catch(() => setRoomLoadError(t.global_error || "Kunne ikkje laste rommet."));
   }, [roomId, token]);
 
   // Загружаем бронирования (публично) и историю (только для авторизованных).
@@ -179,13 +185,13 @@ export const RoomPage = () => {
     const from = weekStart.toISOString();
     const to = new Date(weekStart.getTime() + 7 * 86400000).toISOString();
     apiFetch(`/bookings/room/${roomId}?from=${from}&to=${to}`, { token }).then(setBookings).catch(() => {});
-    if (token) {
+    if (token && canWrite) {
       apiFetch(`/bookings/room/${roomId}/history`, { token }).then(setHistory).catch(() => {});
     } else {
       setHistory([]);
     }
   };
-  useEffect(loadBookings, [roomId, token, weekStart]);
+  useEffect(loadBookings, [roomId, token, weekStart, canWrite]);
 
   // Легенда календаря должна показывать все компании из админки, даже если
   // у части компаний нет броней в этой комнате на текущей неделе.
@@ -324,6 +330,7 @@ export const RoomPage = () => {
   // Кликнул и не двигал = drag с одинаковыми hourStart/hourEnd → 1ч слот.
   // Перетащил вниз/вверх — диапазон расширяется до отпускания мыши.
   const [drag, setDrag] = useState(null);
+  const suppressNextClickRef = useRef(false);
 
   // Открыть модалку по результату drag-выделения.
   // Сначала проверяем, что весь выделенный диапазон свободен — иначе тихо отменяем.
@@ -354,7 +361,12 @@ export const RoomPage = () => {
   useEffect(() => {
     if (!drag) return;
     const onUp = () => {
+      const hadRange = drag.hourStart !== drag.hourEnd;
       finishDrag(drag);
+      if (hadRange) {
+        suppressNextClickRef.current = true;
+        window.setTimeout(() => { suppressNextClickRef.current = false; }, 0);
+      }
       setDrag(null);
     };
     window.addEventListener("mouseup", onUp);
@@ -604,7 +616,8 @@ export const RoomPage = () => {
   const nextWeek = () => setWeekStart(new Date(weekStart.getTime() + 7 * 86400000));
 
   // Пока данные комнаты не загружены — показываем индикатор загрузки.
-  if (!room) return <div className="page">Lastar...</div>;
+  if (!room && !roomLoadError) return <div className="page">Lastar...</div>;
+  if (!room && roomLoadError) return <div className="page"><p className="error-text">{roomLoadError}</p></div>;
 
   const now = new Date();
   const sortFn = (a, b) => {
@@ -765,7 +778,10 @@ export const RoomPage = () => {
                     // Свободная ячейка: drag для выделения диапазона, click для 1ч-слота
                     onCellMouseDown = () => handleCellMouseDown(d, h, true, cellInPast);
                     onCellMouseEnter = () => handleCellMouseEnter(d, h);
-                    onCellClick = () => { if (!drag) openCreateModal(d, h); };
+                    onCellClick = () => {
+                      if (suppressNextClickRef.current) return;
+                      if (!drag) openCreateModal(d, h);
+                    };
                     onCellKeyDown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCreateModal(d, h); } };
                     cellClickable = true;
                   } else if (!info.past) {

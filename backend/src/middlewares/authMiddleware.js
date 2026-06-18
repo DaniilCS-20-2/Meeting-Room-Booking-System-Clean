@@ -36,7 +36,7 @@ const authMiddleware = async (req, _res, next) => {
     }
     // Инвалидация JWT по token_version: после смены пароля/почты старые
     // токены перестают работать.
-    if (typeof payload.tv === "number" && payload.tv !== fresh.token_version) {
+    if (typeof payload.tv !== "number" || payload.tv !== fresh.token_version) {
       return next(new HttpError(401, "Token has been revoked. Please sign in again."));
     }
     req.user = {

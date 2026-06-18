@@ -10,6 +10,9 @@ const {
 
 // Создаём сервис бизнес-логики бронирований.
 class BookingService {
+  static MAX_RECURRING_OCCURRENCES = 366;
+  static MAX_RECURRING_SPAN_DAYS = 366;
+
   static validateBaseSlot(startDateTime, endDateTime) {
     const startTime = new Date(startDateTime);
     const endTime = new Date(endDateTime);
@@ -75,6 +78,13 @@ class BookingService {
       // Запрещаем обратный диапазон.
       throw new HttpError(400, "Recurring untilDate must be equal or after the first booking date.");
     }
+    const spanDays = Math.ceil((untilDate.getTime() - startTime.getTime()) / (24 * 60 * 60 * 1000));
+    if (spanDays > BookingService.MAX_RECURRING_SPAN_DAYS) {
+      throw new HttpError(
+        400,
+        `Recurring series is too long (max ${BookingService.MAX_RECURRING_SPAN_DAYS} days).`
+      );
+    }
 
     // Генерируем идентификатор группы recurring-бронирований.
     const recurrenceGroupId = crypto.randomUUID();
@@ -89,6 +99,12 @@ class BookingService {
     // Если по шаблону не сгенерировано ни одного слота, это ошибка входных данных.
     if (generated.length === 0) {
       throw new HttpError(400, "Recurring rule produced zero occurrences.");
+    }
+    if (generated.length > BookingService.MAX_RECURRING_OCCURRENCES) {
+      throw new HttpError(
+        400,
+        `Recurring series is too large (max ${BookingService.MAX_RECURRING_OCCURRENCES} occurrences).`
+      );
     }
 
     // Добавляем идентификатор группы к каждому вхождению серии.

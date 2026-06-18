@@ -1,5 +1,5 @@
 // Импортируем React и необходимые хуки.
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 // Импортируем обёртку для API-запросов.
 import { apiFetch } from "../api";
 
@@ -17,23 +17,34 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   // Флаг загрузки — true, пока проверяем токен при старте.
   const [loading, setLoading] = useState(!!token);
+  const loadSeqRef = useRef(0);
+  const tokenRef = useRef(token);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   // Загружаем данные пользователя по токену из API.
   const loadUser = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
+    const tokenAtStart = token;
     // Если токена нет — сбрасываем пользователя и завершаем загрузку.
-    if (!token) { setUser(null); setLoading(false); return; }
+    if (!tokenAtStart) { setUser(null); setLoading(false); return; }
     try {
       // Запрашиваем данные текущего пользователя через GET /api/auth/me.
-      const data = await apiFetch("/auth/me", { token });
+      const data = await apiFetch("/auth/me", { token: tokenAtStart });
       // Сохраняем полученные данные в state.
+      if (seq !== loadSeqRef.current || tokenAtStart !== tokenRef.current) return;
       setUser(data);
     } catch {
+      if (seq !== loadSeqRef.current || tokenAtStart !== tokenRef.current) return;
       // Токен невалидный или просроченный — удаляем его.
       localStorage.removeItem("token");
       // Сбрасываем state токена и пользователя.
       setToken(null);
       setUser(null);
     } finally {
+      if (seq !== loadSeqRef.current) return;
       // Завершаем загрузку в любом случае.
       setLoading(false);
     }

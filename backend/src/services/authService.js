@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const env = require("../config/env");
 const UserRepository = require("../models/userRepository");
@@ -26,7 +27,7 @@ const signUserToken = (user) =>
   );
 
 // 6-значный код для отправки на почту.
-const generateCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const generateCode = () => String(crypto.randomInt(100000, 1000000));
 
 class AuthService {
   static async register({ email, password, displayName, companyId }) {
@@ -118,7 +119,11 @@ class AuthService {
     }
 
     const whitelisted = await WhitelistRepository.findByEmail(pending.email);
-    const role = pending.role || (whitelisted ? whitelisted.role : "user");
+    if (!whitelisted) {
+      await PendingRegistrationRepository.remove(emailKey);
+      throw new HttpError(403, "E-posten er ikkje godkjend for registrering.");
+    }
+    const role = pending.role || whitelisted.role;
     const user = await UserRepository.createUser({
       email: pending.email,
       displayName: pending.display_name,
@@ -213,12 +218,16 @@ class AuthService {
       throw new HttpError(400, "Invalid verification code.");
     }
 
+    const consumed = await VerificationCodeRepository.consumeVerified(result.row.id, code);
+    if (!consumed) {
+      throw new HttpError(400, "Invalid verification code.");
+    }
+
     const hash = await bcrypt.hash(newPassword, 10);
     await UserRepository.updatePassword(user.id, hash);
     await UserRepository.confirmEmail(user.id);
     // Сбрасываем все ранее выданные JWT.
     await UserRepository.bumpTokenVersion(user.id);
-    await VerificationCodeRepository.consume(result.row.id);
 
     return { reset: true };
   }

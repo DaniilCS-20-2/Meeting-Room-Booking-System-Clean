@@ -28,7 +28,7 @@ const optionalStr = (max = 200) =>
 const registerSchema = z
   .object({
     email: emailField,
-    password: z.string().min(1).max(200),
+    password: z.string().min(6).max(200),
     displayName: z.string().trim().max(100).optional().default(""),
     companyId: z.union([uuidField, z.literal(""), z.null()]).optional(),
   })
@@ -56,7 +56,7 @@ const resetPasswordSchema = z
   .object({
     email: emailField,
     code: sixDigitCode,
-    newPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(6).max(200),
   })
   .strict();
 
@@ -71,14 +71,14 @@ const updateProfileSchema = z
 const requestPasswordChangeSchema = z
   .object({
     currentPassword: z.string().min(1).max(200),
-    newPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(6).max(200),
   })
   .strict();
 
 const confirmPasswordChangeSchema = z
   .object({
     code: sixDigitCode,
-    newPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(6).max(200),
   })
   .strict();
 

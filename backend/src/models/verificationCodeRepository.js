@@ -65,6 +65,17 @@ class VerificationCodeRepository {
     await pool.query(`DELETE FROM verification_codes WHERE id = $1`, [id]);
   }
 
+  // Атомарное «поглощение» кода: удаляем запись только при совпадении хеша.
+  // Нужен для защиты от гонки между verify() и consume().
+  static async consumeVerified(id, code) {
+    const { rowCount } = await pool.query(
+      `DELETE FROM verification_codes
+       WHERE id = $1 AND code_hash = $2`,
+      [id, hashCode(code)]
+    );
+    return rowCount > 0;
+  }
+
   // Вспомогалка: сверяем код, инкрементит попытки на ошибке.
   // Возвращает { ok: true, row } либо { ok: false, reason }.
   static async verify(userId, purpose, code) {
