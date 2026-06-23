@@ -170,7 +170,7 @@ export const BookingModal = ({
     if (!end) { setError("Vel ny sluttid."); return; }
     const newEnd = parseLocalInput(end);
     let recurring = null;
-    if (useRecurring) {
+    if (useRecurring && !isSeriesBooking) {
       if (weekdays.size === 0) { setError("Vel minst éin ukedag."); return; }
       if (!untilDate) { setError("Vel sluttdato for serien."); return; }
       const until = new Date(untilDate);
