@@ -167,7 +167,8 @@ export const BookingModal = ({
   };
 
   const handleUpdateEndTime = () => {
-    if (!end) { setError("Vel ny sluttid."); return; }
+    if (!start || !end) { setError("Vel start- og sluttid."); return; }
+    const newStart = parseLocalInput(start);
     const newEnd = parseLocalInput(end);
     let recurring = null;
     if (useRecurring && !isSeriesBooking) {
@@ -184,7 +185,9 @@ export const BookingModal = ({
         method: "PATCH",
         token,
         body: {
+          startDateTime: newStart.toISOString(),
           endDateTime: newEnd.toISOString(),
+          comment: comment.trim() || null,
           recurring,
         },
       }),
@@ -233,7 +236,6 @@ export const BookingModal = ({
                 type="datetime-local"
                 value={start}
                 onChange={(e) => setStart(e.target.value)}
-                disabled={isEdit}
                 required
               />
             </label>
@@ -272,7 +274,6 @@ export const BookingModal = ({
                     placeholder={t.room_comment_placeholder_book}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    disabled={isEdit}
                   />
                 </label>
               )}

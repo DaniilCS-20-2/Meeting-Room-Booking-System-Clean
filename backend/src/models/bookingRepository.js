@@ -255,6 +255,25 @@ class BookingRepository {
     return rows[0] || null;
   }
 
+  // Обновляем start/end/comment существующей записи.
+  static async updateEditableFields(id, { startTime, endTime, comment }, client = null) {
+    const db = client || pool;
+    const { rows } = await db.query(
+      `UPDATE bookings
+         SET start_time = $2,
+             end_time = $3,
+             comment = $4,
+             updated_at = NOW()
+       WHERE id = $1
+         AND status IN ('pending', 'confirmed')
+       RETURNING id, room_id, user_id, start_time, end_time, status,
+                 recurrence_group_id, comment, guest_first_name, guest_last_name,
+                 guest_description, created_at, updated_at`,
+      [id, startTime, endTime, comment]
+    );
+    return rows[0] || null;
+  }
+
   // Привязываем существующее бронирование к recurrence-группе.
   // Используется, когда одиночную бронь превращают в серию при редактировании.
   static async updateRecurrenceGroup(id, recurrenceGroupId, client = null) {

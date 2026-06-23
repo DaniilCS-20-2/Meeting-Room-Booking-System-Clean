@@ -163,7 +163,9 @@ const createBookingSchema = z
 // recurring при PATCH превращает одиночную встречу в серию.
 const updateBookingSchema = z
   .object({
+    startDateTime: z.string().min(5).max(40).optional(),
     endDateTime: z.string().min(5).max(40),
+    comment: optionalStr(500),
     recurring: recurringSchema.optional().nullable(),
   })
   .strict();

@@ -210,7 +210,16 @@ class BookingService {
   // Редактирование брони:
   // - всегда можно менять end_time (если соблюдены ограничения);
   // - опционально можно «превратить» одиночную бронь в recurring-серию.
-  static async updateBookingEndTime({ bookingId, requesterId, requesterRole, newEndDateTime, recurring = null }) {
+  static async updateBookingEndTime({
+    bookingId,
+    requesterId,
+    requesterRole,
+    newStartDateTime = null,
+    newEndDateTime,
+    comment = null,
+    hasComment = false,
+    recurring = null,
+  }) {
     if (!bookingId) throw new HttpError(400, "bookingId is required.");
     if (!newEndDateTime) throw new HttpError(400, "endDateTime is required.");
 
@@ -227,12 +236,17 @@ class BookingService {
       throw new HttpError(403, "You can only edit your own bookings.");
     }
 
+    const start = newStartDateTime ? new Date(newStartDateTime) : new Date(booking.start_time);
     const newEnd = new Date(newEndDateTime);
+    if (!isValidDate(start)) {
+      throw new HttpError(400, "Invalid startDateTime.");
+    }
     if (!isValidDate(newEnd)) {
       throw new HttpError(400, "Invalid endDateTime.");
     }
-
-    const start = new Date(booking.start_time);
+    if (newStartDateTime && start < new Date()) {
+      throw new HttpError(400, "Cannot set booking start time in the past.");
+    }
 
     if (newEnd <= start) {
       throw new HttpError(400, "New end time must be after the start time.");
@@ -279,7 +293,12 @@ class BookingService {
         throw new HttpError(409, "Selected room is already booked for this time slot.");
       }
 
-      let updated = await BookingRepository.updateEndTime(bookingId, newEnd, client);
+      const nextComment = hasComment ? (comment || null) : (booking.comment || null);
+      let updated = await BookingRepository.updateEditableFields(
+        bookingId,
+        { startTime: start, endTime: newEnd, comment: nextComment },
+        client
+      );
       if (!updated) throw new HttpError(409, "Booking could not be updated.");
 
       // Если recurring не передан — обычное редактирование одной записи.
@@ -327,7 +346,7 @@ class BookingService {
           startTime: occurrence.startTime,
           endTime: occurrence.endTime,
           recurrenceGroupId,
-          comment: booking.comment,
+          comment: nextComment,
           guestFirstName: booking.guest_first_name,
           guestLastName: booking.guest_last_name,
           guestDescription: booking.guest_description,
