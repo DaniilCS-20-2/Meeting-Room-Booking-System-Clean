@@ -64,6 +64,9 @@ export const BookingModal = ({
       setStart(toLocalInput(new Date(booking.start_time)));
       setEnd(toLocalInput(new Date(booking.end_time)));
       setComment(booking.comment || "");
+      setGuestFirstName(booking.guest_first_name || "");
+      setGuestDescription(booking.guest_description || "");
+      setUseRecurring(Boolean(booking.recurrence_group_id));
     } else if (initialStart && initialEnd) {
       setStart(toLocalInput(initialStart));
       setEnd(toLocalInput(initialEnd));
@@ -79,6 +82,7 @@ export const BookingModal = ({
 
   const isOwner = booking?.user_id && booking.user_id === currentUserId;
   const canEditThisBooking = isEdit && (isOwner || isAdmin);
+  const isSeriesBooking = Boolean(isEdit && booking?.recurrence_group_id);
 
   const toggleWeekday = (id) => {
     setWeekdays((prev) => {
@@ -121,7 +125,7 @@ export const BookingModal = ({
       return;
     }
     let recurring = null;
-    if (useRecurring) {
+    if (useRecurring && !isSeriesBooking) {
       if (weekdays.size === 0) { setError("Vel minst éin ukedag."); return; }
       if (!untilDate) { setError("Vel sluttdato for serien."); return; }
       const until = new Date(untilDate);
@@ -274,79 +278,80 @@ export const BookingModal = ({
               )}
             </div>
 
-            {!isEdit && (
-              <div className="booking-collapsible">
-                <button
-                  type="button"
-                  className="booking-collapsible__toggle"
-                  onClick={() => setShowGuestFields((open) => !open)}
-                  aria-expanded={showGuestFields}
-                >
-                  <span>{t.booking_guest_title}</span>
-                  <span aria-hidden="true">{showGuestFields ? "−" : "+"}</span>
-                </button>
-                {showGuestFields && (
-                  <fieldset className="booking-guest-fields">
-                    <label className="form-label">{t.booking_guest_names}
-                      <input
-                        className="form-input"
-                        value={guestFirstName}
-                        onChange={(e) => setGuestFirstName(e.target.value)}
-                        maxLength={300}
-                        placeholder={t.booking_guest_names_placeholder}
-                      />
-                    </label>
-                    <label className="form-label">{t.booking_guest_description}
-                      <textarea
-                        className="form-input form-input--textarea"
-                        rows={2}
-                        maxLength={500}
-                        placeholder={t.booking_guest_description_placeholder}
-                        value={guestDescription}
-                        onChange={(e) => setGuestDescription(e.target.value)}
-                      />
-                    </label>
-                  </fieldset>
-                )}
-              </div>
-            )}
+            <div className="booking-collapsible">
+              <button
+                type="button"
+                className="booking-collapsible__toggle"
+                onClick={() => setShowGuestFields((open) => !open)}
+                aria-expanded={showGuestFields}
+              >
+                <span>{t.booking_guest_title}</span>
+                <span aria-hidden="true">{showGuestFields ? "−" : "+"}</span>
+              </button>
+              {showGuestFields && (
+                <fieldset className="booking-guest-fields">
+                  <label className="form-label">{t.booking_guest_names}
+                    <input
+                      className="form-input"
+                      value={guestFirstName}
+                      onChange={(e) => setGuestFirstName(e.target.value)}
+                      maxLength={300}
+                      placeholder={t.booking_guest_names_placeholder}
+                      disabled={isEdit}
+                    />
+                  </label>
+                  <label className="form-label">{t.booking_guest_description}
+                    <textarea
+                      className="form-input form-input--textarea"
+                      rows={2}
+                      maxLength={500}
+                      placeholder={t.booking_guest_description_placeholder}
+                      value={guestDescription}
+                      onChange={(e) => setGuestDescription(e.target.value)}
+                      disabled={isEdit}
+                    />
+                  </label>
+                </fieldset>
+              )}
+            </div>
 
-            {(!isEdit || !booking?.recurrence_group_id) && (
-              <>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={useRecurring}
-                    onChange={(e) => setUseRecurring(e.target.checked)}
-                  />
-                  {t.modal_recurring_toggle}
-                </label>
-                {useRecurring && (
-                  <div className="recurring-block">
-                    <p className="helper-text">{t.modal_recurring_hint}</p>
-                    <div className="weekday-picker">
-                      {WEEKDAYS.map((w) => (
-                        <button
-                          key={w.id}
-                          type="button"
-                          className={`weekday-btn ${weekdays.has(w.id) ? "weekday-btn--active" : ""}`}
-                          onClick={() => toggleWeekday(w.id)}
-                        >{w.label}</button>
-                      ))}
-                    </div>
-                    <label className="form-label">{t.modal_recurring_until}
-                      <input
-                        className="form-input"
-                        type="date"
-                        value={untilDate}
-                        onChange={(e) => setUntilDate(e.target.value)}
-                      />
-                    </label>
+            <>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={useRecurring}
+                  onChange={(e) => setUseRecurring(e.target.checked)}
+                  disabled={isSeriesBooking}
+                />
+                {t.modal_recurring_toggle}
+              </label>
+              {useRecurring && (
+                <div className="recurring-block">
+                  <p className="helper-text">{t.modal_recurring_hint}</p>
+                  <div className="weekday-picker">
+                    {WEEKDAYS.map((w) => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        className={`weekday-btn ${weekdays.has(w.id) ? "weekday-btn--active" : ""}`}
+                        onClick={() => toggleWeekday(w.id)}
+                        disabled={isSeriesBooking}
+                      >{w.label}</button>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-            {isEdit && booking?.recurrence_group_id && (
+                  <label className="form-label">{t.modal_recurring_until}
+                    <input
+                      className="form-input"
+                      type="date"
+                      value={untilDate}
+                      onChange={(e) => setUntilDate(e.target.value)}
+                      disabled={isSeriesBooking}
+                    />
+                  </label>
+                </div>
+              )}
+            </>
+            {isSeriesBooking && (
               <p className="helper-text">
                 Denne bookinga er allereie del av ei serie.
               </p>
