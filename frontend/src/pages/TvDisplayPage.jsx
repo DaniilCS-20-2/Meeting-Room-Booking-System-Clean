@@ -200,7 +200,7 @@ const DisplayRow = ({ item }) => (
             <PersonText text={item.guestNames} className="tv-display__guests" as="p" />
           )}
           {item.guestNote && (
-            <PersonText text={item.guestNote} className="tv-display__guest-note" as="p" />
+            <p className="tv-display__guest-note">({item.guestNote})</p>
           )}
         </div>
       )}

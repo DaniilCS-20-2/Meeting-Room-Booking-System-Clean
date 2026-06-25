@@ -953,7 +953,7 @@ body.tv-display-root--preview,
   display: grid;
   grid-template-columns: var(--tv-brand-w) minmax(0, 1fr);
   gap: var(--tv-row-gap-y) var(--tv-row-gap-x);
-  align-items: center;
+  align-items: start;
   padding: var(--tv-row-pad) 0;
   min-width: 0;
 }
@@ -961,7 +961,7 @@ body.tv-display-root--preview,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
 }
 .tv-display__logo-frame {
